@@ -1,349 +1,281 @@
-# Panduan Lengkap Tutorial Mandiri: Modul 1 Praktikum Pemrograman Web II
-### Penyiapan Lingkungan Pengembangan Web Modern (Laravel 13 & Go Fiber v3)
+# Dokumentasi & Panduan Praktikum Pemrograman Web II
+### Program Studi Teknik Komputer &bull; Fakultas Teknik &bull; Universitas Jenderal Soedirman
 
-**Data Praktikan:**
+**Identitas Praktikan:**
 - **Nama:** Afif Nur Rahman
 - **NIM:** H1H024016
 - **Program Studi:** S1 Teknik Komputer
-- **Perguruan Tinggi:** Universitas Jenderal Soedirman
 - **Tahun Akademik:** 2026/2027
+- **Repositori GitHub:** [https://github.com/apipippp/H1H024016-Apip-Pemweb2](https://github.com/apipippp/H1H024016-Apip-Pemweb2)
 
 ---
 
 ## Daftar Isi
-1. [Prasyarat Perangkat Lunak](#1-prasyarat-perangkat-lunak)
-2. [Langkah 1: Verifikasi PHP dan Composer](#langkah-1-verifikasi-php-dan-composer)
-3. [Langkah 2: Verifikasi Toolchain Go](#langkah-2-verifikasi-toolchain-go)
-4. [Langkah 3: Membuat Proyek Laravel 13](#langkah-3-membuat-proyek-laravel-13)
-5. [Langkah 4: Memahami Struktur Folder Laravel 13](#langkah-4-memahami-struktur-folder-laravel-13)
-6. [Langkah 5: Membuat Proyek Go Fiber v3](#langkah-5-membuat-proyek-go-fiber-v3)
-7. [Langkah 6 & 7: Menulis Server Fiber & Endpoint JSON](#langkah-6--7-menulis-server-fiber--endpoint-json)
-8. [Langkah 8: Pengujian Endpoint HTTP](#langkah-8-pengujian-endpoint-http)
-9. [Langkah 9: Inisialisasi Repositori Git](#langkah-9-inisialisasi-repositori-git)
-10. [Penyelesaian Tugas Mandiri (Tugas 1 - 4)](#penyelesaian-tugas-mandiri)
-11. [Jawaban Pertanyaan Pembahasan (F.1 - F.3)](#jawaban-pertanyaan-pembahasan)
-12. [Tips Troubleshooting & Galat Umum](#tips-troubleshooting--galat-umum)
+- [Modul 1: Penyiapan Lingkungan Pengembangan Web Modern](#-modul-1-penyiapan-lingkungan-pengembangan-web-modern)
+  - [1. Prasyarat & Verifikasi](#1-prasyarat-perangkat-lunak--verifikasi)
+  - [2. Proyek Laravel 13](#2-proyek-laravel-13)
+  - [3. Proyek Go Fiber v3](#3-proyek-go-fiber-v3)
+  - [4. Tugas Mandiri Modul 1](#4-tugas-mandiri-modul-1)
+  - [5. Jawaban Pembahasan Modul 1](#5-jawaban-pembahasan-modul-1)
+- [Modul 2: Fondasi Laravel 13: Routing, Controller, dan Blade](#-modul-2-fondasi-laravel-13-routing-controller-dan-blade)
+  - [1. Ringkasan Teori](#1-ringkasan-teori-modul-2)
+  - [2. Langkah Praktikum](#2-langkah-praktikum-modul-2)
+  - [3. Tugas Praktikum Mandiri (Matakuliah)](#3-tugas-praktikum-mandiri-modul-2)
+  - [4. Jawaban Pembahasan Modul 2](#4-jawaban-pertanyaan-pembahasan-modul-2)
 
 ---
 
-## 1. Prasyarat Perangkat Lunak
+# 📦 MODUL 1: Penyiapan Lingkungan Pengembangan Web Modern
 
-Pastikan perangkat lunak berikut telah terpasang di komputer/laptop Anda:
-- **Laragon** (atau stack PHP 8.4+ mandiri)
-- **Composer** (versi minimal 2.7+)
-- **Go / Golang** (versi minimal 1.23+)
-- **Git** (versi minimal 2.40+)
-- **Visual Studio Code** (Editor Kode)
-- **Browser** (Google Chrome / Edge / Firefox) atau REST client seperti **Postman / Bruno / cURL**
+### 1. Prasyarat Perangkat Lunak & Verifikasi
+- **PHP 8.4+:** `php --version`
+- **Composer 2.7+:** `composer --version`
+- **Go 1.23+:** `go version`
+- **Ekstensi PHP Wajib:** `mbstring`, `openssl`, `pdo_mysql`, `tokenizer`, `xml`, `ctype`, `json`, `curl`, `fileinfo` (diperiksa via `php -m`).
 
----
-
-## Langkah 1: Verifikasi PHP dan Composer
-
-Buka terminal (**PowerShell** atau **Git Bash**), lalu jalankan perintah berikut untuk memeriksa versi:
-
-```powershell
-php --version
-composer --version
-```
-*Pastikan versi PHP yang muncul minimal 8.4.*
-
-Selanjutnya, periksa ekstensi PHP yang dibutuhkan oleh framework Laravel:
-```powershell
-php -m
-```
-*Pastikan modul-modul berikut ada dalam daftar output:*
-- `mbstring`
-- `openssl`
-- `pdo_mysql`
-- `tokenizer`
-- `xml`
-- `ctype`
-- `json`
-- `curl`
-- `fileinfo`
-
----
-
-## Langkah 2: Verifikasi Toolchain Go
-
-Periksa instalasi bahasa Go dengan menjalankan perintah:
-```powershell
-go version
-```
-*Pastikan versi yang muncul minimal `go1.23`.*
-
-Periksa lokasi workspace global Go (`GOPATH`):
-```powershell
-go env GOPATH
-```
-*(Contoh output: `C:\Users\<username>\go`)*
-
----
-
-## Langkah 3: Membuat Proyek Laravel 13
-
-1. **Buat dan masuk ke folder kerja praktikum:**
-   ```powershell
-   mkdir pemweb2
-   cd pemweb2
-   ```
-
-2. **Buat proyek baru Laravel 13 menggunakan Composer:**
+### 2. Proyek Laravel 13 (`latihan-laravel`)
+1. Inisialisasi:
    ```powershell
    composer create-project laravel/laravel:^13.0 latihan-laravel
    ```
-   *Tunggu beberapa menit hingga proses unduhan dependensi dan pembuatan file selesai.*
-
-3. **Masuk ke folder proyek Laravel:**
-   ```powershell
-   cd latihan-laravel
-   ```
-
-4. **Penyesuaian Konfigurasi Database & Session (`.env`):**
-   Buka berkas `.env` pada folder `latihan-laravel`. Secara default Laravel menggunakan driver sqlite. Jika ekstensi pdo_sqlite belum aktif di Laragon Anda, ubah bagian session dan cache menjadi `file` agar aplikasi langsung berjalan tanpa kendala database:
+2. Konfigurasi `.env` untuk session berbasis file:
    ```env
-   DB_CONNECTION=mysql
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=pemweb2
-   DB_USERNAME=root
-   DB_PASSWORD=
-
    SESSION_DRIVER=file
    CACHE_STORE=file
    ```
-
-5. **Jalankan server pengembangan Laravel:**
+3. Menjalankan server:
    ```powershell
    php artisan serve
    ```
-   Buka browser dan akses alamat:
-   [http://127.0.0.1:8000](http://127.0.0.1:8000)
-   *(Tekan `Ctrl + C` di terminal jika ingin menghentikan server).*
+   Akses di: `http://127.0.0.1:8000`
 
----
-
-## Langkah 4: Memahami Struktur Folder Laravel 13
-
-Sejak Laravel 11 hingga Laravel 13, struktur direktori disederhanakan:
-- **`app/Http/Controllers/`** : Berisi kelas pengendali logika permintaan (*Controller*).
-- **`app/Models/`** : Berisi kelas model data Eloquent ORM.
-- **`bootstrap/app.php`** : Konfigurasi routing, middleware, dan exception. *(Catatan penting: Berkas `app/Http/Kernel.php` sudah ditiadakan)*.
-- **`config/`** : Kumpulan berkas konfigurasi aplikasi.
-- **`database/migrations/`** : Skrip skema perubahan struktur tabel basis data.
-- **`routes/web.php`** : Tempat mendaftarkan rute web aplikasi.
-- **`resources/views/`** : Berkas tampilan berbasis template engine Blade (`.blade.php`).
-- **`public/`** : Document root web server yang memuat `index.php` dan aset publik.
-
----
-
-## Langkah 5: Membuat Proyek Go Fiber v3
-
-1. **Kembali ke folder `pemweb2`:**
+### 3. Proyek Go Fiber v3 (`latihan-fiber`)
+1. Inisialisasi modul & pasang dependensi:
    ```powershell
-   cd ..
-   ```
-   *(Pastikan posisi terminal saat ini berada di dalam folder `pemweb2`)*.
-
-2. **Buat dan masuk ke folder proyek Go Fiber:**
-   ```powershell
-   mkdir latihan-fiber
-   cd latihan-fiber
-   ```
-
-3. **Inisialisasi modul Go:**
-   ```powershell
+   mkdir latihan-fiber && cd latihan-fiber
    go mod init latihan-fiber
-   ```
-   *Perintah ini akan membuat berkas `go.mod`.*
-
-4. **Pasang paket framework Fiber v3:**
-   ```powershell
    go get github.com/gofiber/fiber/v3
    ```
-   *Perintah ini akan mengunduh Fiber v3 beserta pustaka pendukungnya dan menghasilkan berkas `go.sum`.*
-
----
-
-## Langkah 6 & 7: Menulis Server Fiber & Endpoint JSON
-
-1. **Buat berkas bernama `main.go` di dalam folder `latihan-fiber`**.
-2. **Isikan kode program berikut:**
-
-```go
-package main
-
-import (
-	"log"
-
-	"github.com/gofiber/fiber/v3"
-)
-
-func main() {
-	// Inisialisasi instance aplikasi Fiber
-	app := fiber.New()
-
-	// Langkah 6: Endpoint root ("/") teks plain
-	app.Get("/", func(c fiber.Ctx) error {
-		return c.SendString("Halo Pemrograman Web II")
-	})
-
-	// Langkah 7: Endpoint JSON ("/api/info")
-	app.Get("/api/info", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"aplikasi": "Latihan Fiber",
-			"versi":    "1.0.0",
-			"status":   "berjalan",
-		})
-	})
-
-	// Tugas 1: Endpoint JSON ("/api/mahasiswa")
-	app.Get("/api/mahasiswa", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"nim":           "H1H024016",
-			"nama":          "Afif Nur Rahman",
-			"program_studi": "Teknik Komputer",
-		})
-	})
-
-	// Jalankan server pada port 3000
-	log.Fatal(app.Listen(":3000"))
-}
-```
-
-3. **Jalankan program:**
+2. Berkas `main.go` memuat endpoint root (`/`), `/api/info`, dan `/api/mahasiswa`.
+3. Menjalankan server:
    ```powershell
    go run main.go
    ```
-4. **Buka di browser:**
-   - Halaman root: [http://localhost:3000](http://localhost:3000) &rarr; Menampilkan `"Halo Pemrograman Web II"`
-   - Endpoint info: [http://localhost:3000/api/info](http://localhost:3000/api/info) &rarr; Menampilkan JSON status aplikasi
+   Akses di: `http://localhost:3000`
 
----
-
-## Langkah 8: Pengujian Endpoint HTTP
-
-Uji respon endpoint menggunakan **cURL** di terminal baru atau menggunakan **Postman**:
-
-```powershell
-# Uji Root Endpoint
-curl -i http://localhost:3000/
-
-# Uji Endpoint JSON Info
-curl -i http://localhost:3000/api/info
-
-# Uji Endpoint JSON Mahasiswa
-curl -i http://localhost:3000/api/mahasiswa
-```
-
-**Hasil yang diharapkan:**
-- Status Code: `HTTP/1.1 200 OK`
-- Header untuk endpoint API: `Content-Type: application/json; charset=utf-8`
-
----
-
-## Langkah 9: Inisialisasi Repositori Git
-
-1. **Inisialisasi Git pada proyek `latihan-laravel`:**
-   ```powershell
-   cd ..\latihan-laravel
-   git init
-   git add .
-   git commit -m "Modul 1: inisialisasi proyek Laravel"
-   ```
-
-2. **Inisialisasi Git pada proyek `latihan-fiber`:**
-   Masuk ke folder `latihan-fiber`, buat berkas `.gitignore` terlebih dahulu:
-   
-   **Isi `.gitignore`:**
-   ```text
-   *.exe
-   .env
-   ```
-   
-   Lalu lakukan commit:
-   ```powershell
-   cd ..\latihan-fiber
-   git init
-   git add .
-   git commit -m "Modul 1: inisialisasi proyek Fiber"
-   ```
-
----
-
-## Penyelesaian Tugas Mandiri
-
-### Tugas 1: Endpoint `/api/mahasiswa` pada Fiber
-- **Deskripsi:** Menambahkan endpoint `GET /api/mahasiswa` yang mengembalikan NIM, Nama, dan Program Studi.
-- **Implementasi:** Telah disertakan pada berkas `main.go` di Langkah 6 & 7 di atas.
-- **Pengujian:** Akses [http://localhost:3000/api/mahasiswa](http://localhost:3000/api/mahasiswa).
-
-### Tugas 2: Ubah Halaman Depan Laravel
-- **Deskripsi:** Ubah halaman depan Laravel agar menampilkan nama dan NIM Anda.
-- **Lokasi Berkas:** `pemweb2/latihan-laravel/resources/views/welcome.blade.php`.
-- **Implementasi:** Ganti isi berkas `welcome.blade.php` dengan antarmuka yang menampilkan:
-  - **Nama:** Afif Nur Rahman
-  - **NIM:** H1H024016
-  - **Program Studi:** S1 Teknik Komputer
-  - **Perguruan Tinggi:** Universitas Jenderal Soedirman
-- **Pengujian:** Jalankan `php artisan serve` di folder `latihan-laravel` lalu buka [http://127.0.0.1:8000](http://127.0.0.1:8000).
-
-### Tugas 3: Unggah ke Repositori GitHub
-1. Buat repository baru di [GitHub](https://github.com/new) dengan nama:
-   **`pemweb2-H1H024016-modul01`** *(set Public, tanpa checklist README)*.
-2. Di terminal, masuk ke direktori induk `pemweb2`:
-   ```powershell
-   cd "c:\laragon\www\KULIAHHH\SEMESTER 5\PRAK. PEMWEB II\pemweb2"
-   git init
-   git add .
-   git commit -m "Modul 1: Penyiapan Lingkungan Pengembangan Web Modern - Afif Nur Rahman (H1H024016)"
-   git branch -M main
-   git remote add origin https://github.com/<USERNAME-GITHUB-ANDA>/pemweb2-H1H024016-modul01.git
-   git push -u origin main
-   ```
-
-### Tugas 4: Tabel Perbandingan Singkat Laravel dan Fiber
+### 4. Tugas Mandiri Modul 1
+- **Tugas 1 (Fiber):** Endpoint `GET /api/mahasiswa` mengembalikan JSON identitas praktikan:
+  ```json
+  {"nama":"Afif Nur Rahman","nim":"H1H024016","program_studi":"Teknik Komputer"}
+  ```
+- **Tugas 2 (Laravel):** Halaman depan `resources/views/welcome.blade.php` diperbarui dengan identitas lengkap (Nama & NIM) serta status lingkungan runtime.
+- **Tugas 3 (Git):** Mengunggah kedua proyek ke repositori GitHub.
+- **Tugas 4 (Tabel Perbandingan Laravel vs Fiber):**
 
 | No | Aspek | Laravel 13 (PHP) | Fiber v3 (Go) |
 |---|---|---|---|
-| 1 | **Bahasa & Paradigma** | PHP (Scripting dinamis, OOP MVC terstruktur). | Go / Golang (Statically typed, compiled, konseptual goroutine/channel). |
-| 2 | **Filosofi & Bawaan Fitur** | *Batteries-Included*: Menyediakan ORM (Eloquent), otentikasi, migrasi database, Blade template, queue, dan mailer secara bawaan. | *Microframework & Minimalist*: Berfokus pada perutean (*routing*) cepat dan penyediaan API berlatensi sangat rendah di atas `valyala/fasthttp`. |
-| 3 | **Ukuran Instalasi** | Besar (folder `vendor/` memuat ratusan MB dependensi pihak ketiga). | Sangat Ringan (hanya dependensi esensial, tanpa folder vendor berukuran besar). |
-| 4 | **Model Eksekusi & Binary** | Mengharuskan runtime PHP (interpreter) dan server web perantara untuk memproses script pada setiap request. | Menghasilkan berkas **single binary executable** (`.exe` mandiri) yang dapat langsung dijalankan tanpa runtime eksternal. |
-| 5 | **Waktu Startup & Kinerja** | Startup butuh inisialisasi framework (*bootstrap* provider), memori lebih besar. | Startup hampir instan (mikrodetik), penggunaan RAM sangat hemat, *throughput* RPS sangat tinggi. |
-| 6 | **Manajer Dependensi** | Menggunakan Composer (`composer.json` & `composer.lock`). | Menggunakan Go Modules (`go.mod` & `go.sum`). |
+| 1 | **Bahasa & Paradigma** | PHP (Interpreted, OOP dinamis, full-stack MVC). | Go / Golang (Compiled, statically typed, concurrent). |
+| 2 | **Filosofi & Fitur** | *Batteries-included*: ORM Eloquent, Blade, auth, migration. | *Microframework*: Minimalis, routing cepat di atas `fasthttp`. |
+| 3 | **Ukuran Dependensi** | Besar (folder `vendor/` ratusan MB). | Sangat Ringan (hanya pustaka inti yang dibutuhkan). |
+| 4 | **Model Runtime** | Butuh PHP Runtime (interpreter/server perantara). | Menghasilkan **single binary executable** mandiri. |
+| 5 | **Kecepatan Startup** | Butuh inisialisasi provider (puluhan milidetik). | Instan (mikrodetik) dengan RPS sangat tinggi. |
+| 6 | **Manajer Paket** | `composer.json` & `composer.lock`. | `go.mod` & `go.sum`. |
+
+### 5. Jawaban Pembahasan Modul 1
+1. **Penyebab folder `vendor` dan file `.exe` tidak masuk Git:**
+   - Mencegah pembengkakan ukuran repositori (*repository bloat*).
+   - Dependensi dapat direkonstruksi ulang secara presisi melalui `composer.json` / `go.mod`.
+   - Berkas biner Go spesifik sistem operasi (*platform-dependent*).
+2. **Fungsi `composer.json` vs `go.mod`:**
+   - Keduanya adalah manifes dependensi deklaratif yang mengadopsi standar SemVer dan memiliki file pengunci hash deterministik (`composer.lock` dan `go.sum`).
+3. **Perbedaan Port 8000 vs 3000:**
+   - Port 8000 adalah PHP CLI built-in development web server (single-threaded, dev only).
+   - Port 3000 adalah native web server mandiri aplikasi Go berbasis `fasthttp` yang memanfaatkan goroutine.
 
 ---
 
-## Jawaban Pertanyaan Pembahasan
+# 🚀 MODUL 2: Fondasi Laravel 13: Routing, Controller, dan Blade
 
-### Pertanyaan 1: Mengapa folder `vendor` pada Laravel dan berkas binary Go tidak diikutsertakan dalam repositori Git?
-1. **Mencegah Pembengkakan Repositori (*Repository Bloat*):** Folder `vendor` berisi puluhan ribu file eksternal dengan ukuran ratusan megabyte. Binary Go (`.exe`) adalah berkas binary yang tidak dapat di-*diff* baris per baris oleh Git. Memasukkannya akan membuat ukuran repositori sangat besar dan memperlambat proses `clone` serta `push`.
-2. **Reproduksibilitas Dependensi:** Seluruh pustaka dependensi sudah tercatat secara presisi di file manifesto (`composer.json` & `composer.lock` untuk PHP, serta `go.mod` & `go.sum` untuk Go). Siapapun yang mengkloning proyek cukup menjalankan `composer install` atau `go mod download`.
-3. **Kompatibilitas Platform (*Cross-Platform*):** Binary hasil kompilasi Go spesifik terhadap sistem operasi dan arsitektur CPU tertentu (misalnya `.exe` Windows x64 tidak bisa jalan di Linux server). Kompilasi harus dilakukan langsung pada lingkungan target atau melalui pipeline CI/CD.
-
-### Pertanyaan 2: Apa fungsi berkas `composer.json` dan `go.mod`, serta apa persamaan keduanya?
-- **Fungsi `composer.json`:** Berkas konfigurasi manajer paket Composer untuk PHP yang mendefinisikan metadata aplikasi, paket dependensi yang dibutuhkan beserta versinya, pemetaan *class autoloading* standar PSR-4, dan script otomasi.
-- **Fungsi `go.mod`:** Berkas root modul Go yang mendefinisikan identitas modul (*module path*), versi toolchain Go yang digunakan, serta daftar modul pustaka eksternal beserta versi semantiknya.
-- **Persamaan Keduanya:**
-  1. Keduanya berfungsi sebagai **manifes dependensi deklaratif** proyek perangkat lunak.
-  2. Keduanya menggunakan standar **Semantic Versioning (SemVer)** untuk penomoran rilis paket.
-  3. Keduanya didampingi berkas pengunci hash dan versi deterministik (`composer.lock` pada Composer dan `go.sum` pada Go) untuk menjamin integritas paket di semua mesin.
-
-### Pertanyaan 3: Jelaskan perbedaan port 8000 pada Laravel dan port 3000 pada Fiber dalam konteks praktikum ini.
-- **Port 8000 (Laravel):** Merupakan port default yang dibuka oleh perintah `php artisan serve`. Perintah ini menjalankan **PHP Built-in CLI Web Server** yang meneruskan request ke berkas `public/index.php`. Server ini bersifat *single-threaded* dan dirancang khusus untuk keperluan pengembangan/debugging (*development only*), bukan untuk lingkungan produksi.
-- **Port 3000 (Fiber):** Merupakan port yang ditentukan langsung dalam kode Go (`app.Listen(":3000")`). Pada Fiber, aplikasi Go bertindak langsung sebagai **server web mandiri (*standalone web server*)** menggunakan arsitektur event-driven `fasthttp`. Server ini mampu melayani ribuan koneksi konkuren secara asinkron menggunakan *goroutine* tanpa perlu perantara web server Apache/Nginx.
+### 1. Ringkasan Teori Modul 2
+- **Alur Permintaan HTTP Laravel:**
+  `Peramban` &rarr; `public/index.php` (Front Controller) &rarr; `bootstrap/app.php` &rarr; `Middleware Global` &rarr; `Router` &rarr; `Middleware Rute` &rarr; `Controller` &rarr; `Response / View` &rarr; `Peramban`.
+- **Pola MVC (Model-View-Controller):**
+  - **Model:** Representasi data & aturan bisnis.
+  - **View:** Penyusun antarmuka tampilan untuk pengguna.
+  - **Controller:** Penerima permintaan, pemroses logika, dan pemilih tampilan view.
+- **Blade Template Engine:** Template engine bawaan Laravel berekstensi `.blade.php` yang dikompilasi menjadi PHP biasa tanpa beban performa.
 
 ---
 
-## Tips Troubleshooting & Galat Umum
+### 2. Langkah Praktikum Modul 2
 
-1. **Error `could not find driver (Connection: sqlite)` pada Laravel:**
-   - **Penyebab:** Ekstensi `pdo_sqlite` belum aktif di PHP Laragon.
-   - **Solusi:** Di file `.env`, ubah `SESSION_DRIVER=database` menjadi `SESSION_DRIVER=file` dan `CACHE_STORE=file`.
-2. **Error `port already in use` (Port 8000 atau 3000 sudah terpakai):**
-   - **Solusi Laravel:** Jalankan di port lain: `php artisan serve --port=8080`.
-   - **Solusi Fiber:** Ubah `:3000` di `main.go` menjadi `:3001` atau matikan proses yang menggunakan port tersebut.
-3. **Ekstensi PHP belum aktif di Laragon:**
-   - Buka menu Laragon &rarr; **PHP** &rarr; **Extensions** &rarr; Beri tanda centang pada `curl`, `mbstring`, `openssl`, `pdo_mysql`, `fileinfo`.
+#### Langkah 1: Rute Dasar
+Menambahkan rute teks langsung pada [routes/web.php](file:///c:/laragon/www/KULIAHHH/SEMESTER%205/PRAK.%20PEMWEB%20II/pemweb2/latihan-laravel/routes/web.php):
+```php
+Route::get('/salam', function () {
+    return 'Selamat datang di Pemrograman Web II';
+});
+```
+*Uji:* `http://127.0.0.1:8000/salam`
+
+#### Langkah 2 & 3: Rute dengan Parameter & Validasi Format
+```php
+// Rute dengan parameter wajib:
+Route::get('/mahasiswa/{nim}', function (string $nim) {
+    return 'Data mahasiswa dengan NIM ' . $nim;
+});
+
+// Pembatasan parameter angka (regex whereNumber):
+Route::get('/semester/{angka}', function (int $angka) {
+    return 'Semester ke ' . $angka;
+})->whereNumber('angka');
+```
+*Uji:* `http://127.0.0.1:8000/mahasiswa/H1A123456` dan `http://127.0.0.1:8000/semester/5` (jika diisi huruf akan menghasilkan 404).
+
+#### Langkah 4: Melihat Daftar Rute
+```powershell
+php artisan route:list
+```
+
+#### Langkah 5 & 6: Membuat MahasiswaController & Routing
+Membuat controller:
+```powershell
+php artisan make:controller MahasiswaController
+```
+Menambahkan method `index()` dan `show()` di `app/Http/Controllers/MahasiswaController.php`, lalu menghubungkan rute di `routes/web.php`:
+```php
+use App\Http\Controllers\MahasiswaController;
+
+Route::get('/data-mahasiswa', [MahasiswaController::class, 'index'])->name('mahasiswa.index');
+Route::get('/data-mahasiswa/{nim}', [MahasiswaController::class, 'show'])->name('mahasiswa.show');
+```
+
+#### Langkah 7: Membuat Layout Blade (`layouts/app.blade.php`)
+Membuat berkas `resources/views/layouts/app.blade.php` sebagai kerangka utama halaman berbasis Bootstrap 5.
+
+#### Langkah 8 & 9: View Daftar & Detail Mahasiswa
+- `resources/views/mahasiswa/index.blade.php`: Menampilkan tabel mahasiswa menggunakan direktif `@forelse`.
+- `resources/views/mahasiswa/show.blade.php`: Menampilkan kartu detail NIM mahasiswa terpilih.
+
+#### Langkah 10: Membaca Data dari Request (Query String)
+Method `cari(Request $request)` di `MahasiswaController`:
+```php
+public function cari(Request $request)
+{
+    $kataKunci = $request->query('q', '');
+    return response()->json([
+        'kata_kunci' => $kataKunci,
+        'metode' => $request->method(),
+        'path' => $request->path(),
+    ]);
+}
+```
+*Uji:* `http://127.0.0.1:8000/cari-mahasiswa?q=andi`
+
+#### Langkah 11: Membuat Komponen Blade `KartuInfo`
+1. Generate komponen:
+   ```powershell
+   php artisan make:component KartuInfo
+   ```
+2. Konstruktor di `app/View/Components/KartuInfo.php`:
+   ```php
+   public function __construct(public string $judul) {}
+   ```
+3. Tampilan di `resources/views/components/kartu-info.blade.php`:
+   ```html
+   <div class="card mb-3">
+       <div class="card-header">{{ $judul }}</div>
+       <div class="card-body">{{ $slot }}</div>
+   </div>
+   ```
+4. Digunakan di `resources/views/mahasiswa/index.blade.php`:
+   ```html
+   <x-kartu-info judul="Informasi">
+       Data pada halaman ini masih berupa array statis. Pada modul berikutnya data akan diambil dari basis data.
+   </x-kartu-info>
+   ```
+
+---
+
+### 3. Tugas Praktikum Mandiri Modul 2
+
+#### 1. MatakuliahController (`app/Http/Controllers/MatakuliahController.php`)
+Menyediakan data array 5 mata kuliah beserta method `index` (dengan pencarian) dan `show`:
+```php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class MatakuliahController extends Controller
+{
+    private array $dataMatakuliah = [
+        ['kode' => 'TK2101', 'nama' => 'Pemrograman Web II', 'sks' => 3, 'semester' => 5],
+        ['kode' => 'TK2102', 'nama' => 'Sistem Operasi', 'sks' => 3, 'semester' => 3],
+        ['kode' => 'TK2103', 'nama' => 'Jaringan Komputer', 'sks' => 3, 'semester' => 5],
+        ['kode' => 'TK2104', 'nama' => 'Praktikum Jaringan Komputer', 'sks' => 1, 'semester' => 5],
+        ['kode' => 'TK2105', 'nama' => 'Bahasa Inggris Teknik', 'sks' => 2, 'semester' => 1],
+    ];
+
+    public function index(Request $request)
+    {
+        $daftarMatakuliah = $this->dataMatakuliah;
+        $kataKunci = $request->query('q', '');
+
+        if (!empty($kataKunci)) {
+            $daftarMatakuliah = array_filter($daftarMatakuliah, function ($mk) use ($kataKunci) {
+                return stripos($mk['nama'], $kataKunci) !== false || stripos($mk['kode'], $kataKunci) !== false;
+            });
+        }
+
+        return view('matakuliah.index', [
+            'daftarMatakuliah' => $daftarMatakuliah,
+            'kataKunci' => $kataKunci,
+        ]);
+    }
+
+    public function show(string $kode)
+    {
+        $matakuliah = collect($this->dataMatakuliah)->firstWhere('kode', $kode);
+        return view('matakuliah.show', compact('kode', 'matakuliah'));
+    }
+}
+```
+
+#### 2. Komponen Blade `badge-sks` (`resources/views/components/badge-sks.blade.php`)
+Menampilkan badge warna berbeda berdasarkan jumlah SKS:
+```html
+@if ($sks >= 3)
+    <span class="badge bg-success">{{ $sks }} SKS</span>
+@else
+    <span class="badge bg-secondary">{{ $sks }} SKS</span>
+@endif
+```
+
+#### 3. View Daftar & Pencarian (`resources/views/matakuliah/index.blade.php`)
+- Mewarisi `layouts.app`.
+- Memiliki form pencarian `<form method="GET">` dengan input `name="q"`.
+- Menggunakan komponen `<x-badge-sks :sks="$mk['sks']" />`.
+- Tautan tombol aksi Detail menuju rute `route('matakuliah.show', $mk['kode'])`.
+
+#### 4. View Detail (`resources/views/matakuliah/show.blade.php`)
+- Menampilkan kartu rincian Kode, Nama, Bobot SKS, dan Semester.
+- Tombol navigasi kembali ke daftar mata kuliah.
+
+---
+
+### 4. Jawaban Pertanyaan Pembahasan Modul 2
+
+#### 1. Keuntungan Penggunaan Nama Rute (*Named Routes*):
+- **Decoupling (Fleksibilitas Refactoring):** Jika pola URL diubah di `routes/web.php`, tautan di seluruh view Blade yang menggunakan `route('nama.rute')` otomatis mengikuti tanpa perlu pengubahan manual.
+- **Parameter Handling:** Helper `route()` otomatis mengelola URL-encoding dan pemetaan parameter dinamis (`route('matakuliah.show', $kode)`).
+- **Deteksi Dini Kesalahan:** Menghasilkan error `RouteNotFoundException` saat kompilasi/render jika nama rute salah ketik, mencegah munculnya broken link (404) di production.
+
+#### 2. Perbedaan `{{ }}` dan `{!! !!}` pada Blade serta Implikasi Keamanannya:
+- **`{{ $var }}` (Escaped Output):** Melewatkan variabel ke fungsi `htmlspecialchars()`. Karakter HTML (`<`, `>`, `&`, `"`) diubah menjadi entitas aman. **Melindungi dari celah keamanan Cross-Site Scripting (XSS)**.
+- **`{!! $var !!}` (Raw/Unescaped Output):** Mencetak data mentah apa adanya. **Berisiko tinggi terhadap XSS** jika data berasal dari input pengguna tanpa sanitasi. Hanya boleh digunakan untuk konten HTML terpercaya (misal hasil parser Markdown atau editor WYSIWYG yang sudah dibersihkan).
+
+#### 3. Alasan Logika Pengambilan Data Tidak Boleh Diletakkan Langsung di Berkas Rute:
+- **Pola MVC & Separation of Concerns:** Berkas rute hanya bertugas sebagai pengarah (*dispatcher*). Logika bisnis dan data harus berada di lapisan Controller dan Model.
+- **Dukungan *Route Caching*:** Perintah optimasi produksi `php artisan route:cache` **akan gagal** jika terdapat rute yang menggunakan fungsi anonim (*closure*).
+- **Maintainability & Clean Code:** Mencegah `web.php` menjadi *spaghetti code* yang sulit dibaca dan dirawat.
+- **Testability & Reusability:** Method pada Controller dapat diuji dengan mudah melalui unit/feature test dan dapat digunakan kembali oleh komponen lain.
