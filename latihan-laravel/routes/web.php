@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MahasiswaController;
 // Tugas no 2
 use App\Http\Controllers\MatakuliahController;
+//
+use App\Http\Controllers\MahasiswaWebController;
+
 
 
 
@@ -40,3 +43,11 @@ Route::get('/cari-mahasiswa', [MahasiswaController::class, 'cari']);
 // Tugas no 2
 Route::get('/matakuliah', [MatakuliahController::class, 'index'])->name('matakuliah.index');
 Route::get('/matakuliah/{kode}', [MatakuliahController::class, 'show'])->name('matakuliah.show');
+//
+
+Route::get('/mahasiswa-data', [MahasiswaWebController::class, 'index'])->name('mahasiswa.data');
+
+Route::get('/mahasiswa-data/{id}', [MahasiswaWebController::class, 'show'])->name('mahasiswa.detail');
+
+Route::get('/mahasiswa-top', [MahasiswaWebController::class, 'topIpk'])->name('mahasiswa.top');
+

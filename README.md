@@ -22,6 +22,11 @@
   - [2. Langkah Praktikum](#2-langkah-praktikum-modul-2)
   - [3. Tugas Praktikum Mandiri (Matakuliah)](#3-tugas-praktikum-mandiri-modul-2)
   - [4. Jawaban Pembahasan Modul 2](#4-jawaban-pertanyaan-pembahasan-modul-2)
+- [Modul 3: Basis Data, Migration, dan Eloquent ORM](#-modul-3-basis-data-migration-dan-eloquent-orm)
+  - [1. Ringkasan Teori](#1-ringkasan-teori-modul-3)
+  - [2. Langkah Praktikum](#2-langkah-praktikum-modul-3)
+  - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-3)
+  - [4. Jawaban Pembahasan Modul 3](#4-jawaban-pertanyaan-pembahasan-modul-3)
 
 ---
 
@@ -105,177 +110,145 @@
   - **Controller:** Penerima permintaan, pemroses logika, dan pemilih tampilan view.
 - **Blade Template Engine:** Template engine bawaan Laravel berekstensi `.blade.php` yang dikompilasi menjadi PHP biasa tanpa beban performa.
 
----
-
 ### 2. Langkah Praktikum Modul 2
-
-#### Langkah 1: Rute Dasar
-Menambahkan rute teks langsung pada [routes/web.php](file:///c:/laragon/www/KULIAHHH/SEMESTER%205/PRAK.%20PEMWEB%20II/pemweb2/latihan-laravel/routes/web.php):
-```php
-Route::get('/salam', function () {
-    return 'Selamat datang di Pemrograman Web II';
-});
-```
-*Uji:* `http://127.0.0.1:8000/salam`
-
-#### Langkah 2 & 3: Rute dengan Parameter & Validasi Format
-```php
-// Rute dengan parameter wajib:
-Route::get('/mahasiswa/{nim}', function (string $nim) {
-    return 'Data mahasiswa dengan NIM ' . $nim;
-});
-
-// Pembatasan parameter angka (regex whereNumber):
-Route::get('/semester/{angka}', function (int $angka) {
-    return 'Semester ke ' . $angka;
-})->whereNumber('angka');
-```
-*Uji:* `http://127.0.0.1:8000/mahasiswa/H1A123456` dan `http://127.0.0.1:8000/semester/5` (jika diisi huruf akan menghasilkan 404).
-
-#### Langkah 4: Melihat Daftar Rute
-```powershell
-php artisan route:list
-```
-
-#### Langkah 5 & 6: Membuat MahasiswaController & Routing
-Membuat controller:
-```powershell
-php artisan make:controller MahasiswaController
-```
-Menambahkan method `index()` dan `show()` di `app/Http/Controllers/MahasiswaController.php`, lalu menghubungkan rute di `routes/web.php`:
-```php
-use App\Http\Controllers\MahasiswaController;
-
-Route::get('/data-mahasiswa', [MahasiswaController::class, 'index'])->name('mahasiswa.index');
-Route::get('/data-mahasiswa/{nim}', [MahasiswaController::class, 'show'])->name('mahasiswa.show');
-```
-
-#### Langkah 7: Membuat Layout Blade (`layouts/app.blade.php`)
-Membuat berkas `resources/views/layouts/app.blade.php` sebagai kerangka utama halaman berbasis Bootstrap 5.
-
-#### Langkah 8 & 9: View Daftar & Detail Mahasiswa
-- `resources/views/mahasiswa/index.blade.php`: Menampilkan tabel mahasiswa menggunakan direktif `@forelse`.
-- `resources/views/mahasiswa/show.blade.php`: Menampilkan kartu detail NIM mahasiswa terpilih.
-
-#### Langkah 10: Membaca Data dari Request (Query String)
-Method `cari(Request $request)` di `MahasiswaController`:
-```php
-public function cari(Request $request)
-{
-    $kataKunci = $request->query('q', '');
-    return response()->json([
-        'kata_kunci' => $kataKunci,
-        'metode' => $request->method(),
-        'path' => $request->path(),
-    ]);
-}
-```
-*Uji:* `http://127.0.0.1:8000/cari-mahasiswa?q=andi`
-
-#### Langkah 11: Membuat Komponen Blade `KartuInfo`
-1. Generate komponen:
-   ```powershell
-   php artisan make:component KartuInfo
-   ```
-2. Konstruktor di `app/View/Components/KartuInfo.php`:
-   ```php
-   public function __construct(public string $judul) {}
-   ```
-3. Tampilan di `resources/views/components/kartu-info.blade.php`:
-   ```html
-   <div class="card mb-3">
-       <div class="card-header">{{ $judul }}</div>
-       <div class="card-body">{{ $slot }}</div>
-   </div>
-   ```
-4. Digunakan di `resources/views/mahasiswa/index.blade.php`:
-   ```html
-   <x-kartu-info judul="Informasi">
-       Data pada halaman ini masih berupa array statis. Pada modul berikutnya data akan diambil dari basis data.
-   </x-kartu-info>
-   ```
-
----
+- **Langkah 1 & 2:** Rute dasar (`/salam`), rute parameter (`/mahasiswa/{nim}`), dan validasi angka (`whereNumber('angka')`).
+- **Langkah 3 s/d 6:** Pembuatan `MahasiswaController` dengan method `index()` dan `show()`.
+- **Langkah 7 s/d 9:** Layout utama `layouts/app.blade.php` berbasis Bootstrap dan view mahasiswa.
+- **Langkah 10 & 11:** Pembacaan query string via `$request->query()` dan komponen Blade `<x-kartu-info>`.
 
 ### 3. Tugas Praktikum Mandiri Modul 2
+- **MatakuliahController:** Menyediakan array 5 mata kuliah beserta method `index` (dengan filter pencarian query string `?q=`) dan `show`.
+- **Komponen Blade `<x-badge-sks>`:** Menampilkan badge warna hijau untuk SKS &ge; 3 (`bg-success`) dan abu-abu untuk SKS < 3 (`bg-secondary`).
+- **View Matakuliah:** Halaman daftar lengkap dengan form pencarian dan halaman detail matakuliah.
 
-#### 1. MatakuliahController (`app/Http/Controllers/MatakuliahController.php`)
-Menyediakan data array 5 mata kuliah beserta method `index` (dengan pencarian) dan `show`:
-```php
-namespace App\Http\Controllers;
-
-use Illuminate\Http\Request;
-
-class MatakuliahController extends Controller
-{
-    private array $dataMatakuliah = [
-        ['kode' => 'TK2101', 'nama' => 'Pemrograman Web II', 'sks' => 3, 'semester' => 5],
-        ['kode' => 'TK2102', 'nama' => 'Sistem Operasi', 'sks' => 3, 'semester' => 3],
-        ['kode' => 'TK2103', 'nama' => 'Jaringan Komputer', 'sks' => 3, 'semester' => 5],
-        ['kode' => 'TK2104', 'nama' => 'Praktikum Jaringan Komputer', 'sks' => 1, 'semester' => 5],
-        ['kode' => 'TK2105', 'nama' => 'Bahasa Inggris Teknik', 'sks' => 2, 'semester' => 1],
-    ];
-
-    public function index(Request $request)
-    {
-        $daftarMatakuliah = $this->dataMatakuliah;
-        $kataKunci = $request->query('q', '');
-
-        if (!empty($kataKunci)) {
-            $daftarMatakuliah = array_filter($daftarMatakuliah, function ($mk) use ($kataKunci) {
-                return stripos($mk['nama'], $kataKunci) !== false || stripos($mk['kode'], $kataKunci) !== false;
-            });
-        }
-
-        return view('matakuliah.index', [
-            'daftarMatakuliah' => $daftarMatakuliah,
-            'kataKunci' => $kataKunci,
-        ]);
-    }
-
-    public function show(string $kode)
-    {
-        $matakuliah = collect($this->dataMatakuliah)->firstWhere('kode', $kode);
-        return view('matakuliah.show', compact('kode', 'matakuliah'));
-    }
-}
-```
-
-#### 2. Komponen Blade `badge-sks` (`resources/views/components/badge-sks.blade.php`)
-Menampilkan badge warna berbeda berdasarkan jumlah SKS:
-```html
-@if ($sks >= 3)
-    <span class="badge bg-success">{{ $sks }} SKS</span>
-@else
-    <span class="badge bg-secondary">{{ $sks }} SKS</span>
-@endif
-```
-
-#### 3. View Daftar & Pencarian (`resources/views/matakuliah/index.blade.php`)
-- Mewarisi `layouts.app`.
-- Memiliki form pencarian `<form method="GET">` dengan input `name="q"`.
-- Menggunakan komponen `<x-badge-sks :sks="$mk['sks']" />`.
-- Tautan tombol aksi Detail menuju rute `route('matakuliah.show', $mk['kode'])`.
-
-#### 4. View Detail (`resources/views/matakuliah/show.blade.php`)
-- Menampilkan kartu rincian Kode, Nama, Bobot SKS, dan Semester.
-- Tombol navigasi kembali ke daftar mata kuliah.
+### 4. Jawaban Pembahasan Modul 2
+1. **Keuntungan Nama Rute (*Named Routes*):** Fleksibilitas refactoring URL secara terpusat, kemudahan penanganan parameter dinamis, dan deteksi dini galat saat rendering.
+2. **Perbedaan `{{ }}` dan `{!! !!}`:** `{{ }}` melakukan escaping otomatis via `htmlspecialchars` untuk mencegah serangan XSS. `{!! !!}` mencetak output mentah tanpa sanitasi sehingga rentan XSS.
+3. **Alasan Logika Tidak di Berkas Rute:** Menjaga prinsip Separation of Concerns (MVC), mendukung fitur optimasi `php artisan route:cache`, serta menjaga kemudahan pengujian dan pemeliharaan kode.
 
 ---
 
-### 4. Jawaban Pertanyaan Pembahasan Modul 2
+# 🗄️ MODUL 3: Basis Data, Migration, dan Eloquent ORM
 
-#### 1. Keuntungan Penggunaan Nama Rute (*Named Routes*):
-- **Decoupling (Fleksibilitas Refactoring):** Jika pola URL diubah di `routes/web.php`, tautan di seluruh view Blade yang menggunakan `route('nama.rute')` otomatis mengikuti tanpa perlu pengubahan manual.
-- **Parameter Handling:** Helper `route()` otomatis mengelola URL-encoding dan pemetaan parameter dinamis (`route('matakuliah.show', $kode)`).
-- **Deteksi Dini Kesalahan:** Menghasilkan error `RouteNotFoundException` saat kompilasi/render jika nama rute salah ketik, mencegah munculnya broken link (404) di production.
+### 1. Ringkasan Teori Modul 3
+- **ORM (Object Relational Mapping):** Memetakan tabel database menjadi objek PHP (Eloquent), memungkinkan penulisan query berorientasi objek yang lebih aman dari SQL Injection.
+- **Migration:** Manajemen skema database berbasis kode (version control untuk database) sehingga struktur tabel seragam di seluruh tim.
+- **Relasi Database:**
+  - *One to Many:* Program Studi memiliki banyak Mahasiswa (`hasMany` & `belongsTo`).
+  - *Many to Many:* Mahasiswa mengambil banyak Mata Kuliah melalui tabel pivot `mahasiswa_matakuliah` (`belongsToMany`).
+- **Seeder & Factory:** Mengisi data awal master dan menghasilkan data uji (*dummy data*) secara otomatis.
 
-#### 2. Perbedaan `{{ }}` dan `{!! !!}` pada Blade serta Implikasi Keamanannya:
-- **`{{ $var }}` (Escaped Output):** Melewatkan variabel ke fungsi `htmlspecialchars()`. Karakter HTML (`<`, `>`, `&`, `"`) diubah menjadi entitas aman. **Melindungi dari celah keamanan Cross-Site Scripting (XSS)**.
-- **`{!! $var !!}` (Raw/Unescaped Output):** Mencetak data mentah apa adanya. **Berisiko tinggi terhadap XSS** jika data berasal dari input pengguna tanpa sanitasi. Hanya boleh digunakan untuk konten HTML terpercaya (misal hasil parser Markdown atau editor WYSIWYG yang sudah dibersihkan).
+---
 
-#### 3. Alasan Logika Pengambilan Data Tidak Boleh Diletakkan Langsung di Berkas Rute:
-- **Pola MVC & Separation of Concerns:** Berkas rute hanya bertugas sebagai pengarah (*dispatcher*). Logika bisnis dan data harus berada di lapisan Controller dan Model.
-- **Dukungan *Route Caching*:** Perintah optimasi produksi `php artisan route:cache` **akan gagal** jika terdapat rute yang menggunakan fungsi anonim (*closure*).
-- **Maintainability & Clean Code:** Mencegah `web.php` menjadi *spaghetti code* yang sulit dibaca dan dirawat.
-- **Testability & Reusability:** Method pada Controller dapat diuji dengan mudah melalui unit/feature test dan dapat digunakan kembali oleh komponen lain.
+### 2. Langkah Praktikum Modul 3
+
+#### Langkah 1 & 2: Setup Database & Koneksi `.env`
+1. Membuat database di MySQL:
+   ```sql
+   CREATE DATABASE pemweb2_praktikum CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+2. Konfigurasi pada `.env`:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=pemweb2_praktikum
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
+3. Uji koneksi: `php artisan db:show`
+
+#### Langkah 3 s/d 5: Migration `program_studis` dan `mahasiswas`
+- Tabel `program_studis`: `id`, `kode` (unique), `nama`, `jenjang`, `timestamps`.
+- Tabel `mahasiswas`: `id`, `program_studi_id` (FK cascade), `nim` (unique), `nama`, `email` (unique), `angkatan`, `ipk`, `aktif`, `timestamps`.
+- Eksekusi: `php artisan migrate`
+
+#### Langkah 6 s/d 9: Model, Factory, Seeder, dan Tinker
+- Model `ProgramStudi` (`app/Models/ProgramStudi.php`) dengan relasi `hasMany(Mahasiswa::class)`.
+- Model `Mahasiswa` (`app/Models/Mahasiswa.php`) dengan relasi `belongsTo(ProgramStudi::class)` dan trait `HasFactory`.
+- Factory `MahasiswaFactory` menghasilkan data dummy acak menggunakan `fake()`.
+- Seeder `ProgramStudiSeeder` dan `DatabaseSeeder` mengisi 3 program studi dan 30 data mahasiswa dummy.
+- Eksekusi:
+  ```powershell
+  php artisan migrate:fresh --seed
+  ```
+- Pengujian query melalui `php artisan tinker`.
+
+#### Langkah 10 s/d 12: Controller Resource, Pagination, dan Masalah N+1
+- Controller: `MahasiswaWebController` dengan method `index()` menggunakan `paginate(10)`.
+- Konfigurasi pagination Bootstrap di `AppServiceProvider.php`:
+  ```php
+  Paginator::useBootstrapFive();
+  ```
+- View: `resources/views/mahasiswa/data.blade.php` menampilkan tabel berpaginasi.
+- **Pengamatan Masalah N+1:** Penggunaan `Mahasiswa::with('programStudi')` (*Eager Loading*) hanya menghasilkan 2 kueri SQL di `storage/logs/laravel.log`, terhindar dari pemborosan kueri (*Lazy Loading N+1*).
+
+---
+
+### 3. Tugas Praktikum Mandiri Modul 3
+
+#### 1. Tabel, Model, dan Seeder Matakuliah
+- **Migration:** `create_matakuliahs_table` memuat kolom `kode`, `nama`, `sks`, dan `semester`.
+- **Model:** `app/Models/Matakuliah.php`.
+- **Seeder:** `MatakuliahSeeder.php` mengisi data 5 mata kuliah.
+
+#### 2. Relasi Many to Many via Tabel Pivot
+- **Migration Pivot:** `create_mahasiswa_matakuliah_table` memuat `mahasiswa_id`, `matakuliah_id`, dan kolom tambahan **`nilai`**.
+- **Definisi Relasi:**
+  - Pada `Mahasiswa.php`:
+    ```php
+    public function matakuliah(): BelongsToMany
+    {
+        return $this->belongsToMany(Matakuliah::class, 'mahasiswa_matakuliah')
+                    ->withPivot('nilai')
+                    ->withTimestamps();
+    }
+    ```
+  - Pada `Matakuliah.php`:
+    ```php
+    public function mahasiswa(): BelongsToMany
+    {
+        return $this->belongsToMany(Mahasiswa::class, 'mahasiswa_matakuliah')
+                    ->withPivot('nilai')
+                    ->withTimestamps();
+    }
+    ```
+- **Seeder Pivot:** Mengaitkan 2–4 mata kuliah beserta nilai acak (`A`, `AB`, `B`, `BC`, `C`) ke setiap mahasiswa.
+
+#### 3. Tampilan Halaman Detail Mahasiswa & Nilai Matakuliah
+- **Controller:** Method `show($id)` di `MahasiswaWebController`:
+  ```php
+  $mahasiswa = Mahasiswa::with(['programStudi', 'matakuliah'])->findOrFail($id);
+  ```
+- **Rute:** `/mahasiswa-data/{id}`
+- **View:** `resources/views/mahasiswa/detail.blade.php` menampilkan kartu informasi mahasiswa dan tabel mata kuliah yang diambil beserta nilai huruf dari kolom pivot (`$mk->pivot->nilai`).
+
+#### 4. Kueri Eloquent Top 10 Mahasiswa Teknik Komputer (IPK Tertinggi)
+- **Kueri Eloquent:**
+  ```php
+  $topMahasiswa = Mahasiswa::whereHas('programStudi', function ($q) {
+      $q->where('nama', 'Teknik Komputer');
+  })
+  ->orderBy('ipk', 'desc')
+  ->take(10)
+  ->get();
+  ```
+- **Tampilan Web:** Diakses melalui rute `/mahasiswa-top` pada berkas view `resources/views/mahasiswa/top.blade.php`.
+
+---
+
+### 4. Jawaban Pertanyaan Pembahasan Modul 3
+
+#### 1. Fungsi Properti `$fillable` dan Risiko Jika Diabaikan:
+- **Fungsi:** Bekerja sebagai *whitelist* untuk menentukan kolom mana saja yang diizinkan untuk diisi secara massal (*Mass Assignment*) melalui method seperti `Model::create($data)` atau `$model->update($data)`.
+- **Risiko Jika Diabaikan:** Aplikasi rentan terhadap serangan **Mass Assignment Injection**. Pengguna jahat dapat memanipulasi payload HTTP dengan menyisipkan field terlarang seperti `is_admin = 1` atau `role = 'admin'` (*Privilege Escalation*). Secara default, jika `$fillable` tidak didefinisikan, Laravel akan melempar galat `MassAssignmentException`.
+
+#### 2. Perbedaan `migrate:fresh`, `migrate:refresh`, dan `migrate:rollback`:
+- **`migrate:rollback`:** Membatalkan (*revert*) batch migrasi terakhir dengan mengeksekusi method `down()`.
+- **`migrate:refresh`:** Membatalkan seluruh migrasi dari awal menggunakan method `down()`, lalu mengeksekusi ulang seluruh method `up()`.
+- **`migrate:fresh`:** Menghapus seluruh tabel secara paksa (*DROP ALL TABLES*) tanpa menjalankan method `down()`, lalu menjalankan seluruh migrasi dari awal (`up()`). Sangat bersih dan cepat untuk kebutuhan reset database lokal.
+
+#### 3. Masalah N Plus 1 dan Cara Mengatasinya:
+- **Masalah:** Terjadi saat relasi dipanggil secara lambat (*Lazy Loading*) di dalam perulangan. 1 kueri awal dijalankan untuk mengambil data induk (misal 10 mahasiswa), dan $N$ kueri tambahan (10 kali) dijalankan untuk mengambil relasi masing-masing mahasiswa. Total kueri menjadi $1 + 10 = 11$ kueri.
+- **Pengamatan Langkah 12:** Saat menggunakan Eager Loading `Mahasiswa::with('programStudi')`, Laravel hanya menjalankan **2 kueri SQL** (satu kueri mahasiswa dan satu kueri `WHERE in` untuk seluruh program studi terkait).
+- **Solusi:** Selalu gunakan **Eager Loading** via klausa `with(['namaRelasi'])` ketika mengambil data relasi yang akan ditampilkan berulang.
