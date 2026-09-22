@@ -27,6 +27,12 @@
   - [2. Langkah Praktikum](#2-langkah-praktikum-modul-3)
   - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-3)
   - [4. Jawaban Pembahasan Modul 3](#4-jawaban-pertanyaan-pembahasan-modul-3)
+- [Modul 4: Membangun RESTful API dengan Laravel 13](#-modul-4-membangun-restful-api-dengan-laravel-13)
+  - [1. Ringkasan Teori](#1-ringkasan-teori-modul-4)
+  - [2. Langkah Praktikum](#2-langkah-praktikum-modul-4)
+  - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-4)
+  - [4. Dokumentasi Endpoint API](#4-tabel-dokumentasi-seluruh-endpoint-api)
+  - [5. Jawaban Pembahasan Modul 4](#5-jawaban-pertanyaan-pembahasan-modul-4)
 
 ---
 
@@ -252,3 +258,126 @@
 - **Masalah:** Terjadi saat relasi dipanggil secara lambat (*Lazy Loading*) di dalam perulangan. 1 kueri awal dijalankan untuk mengambil data induk (misal 10 mahasiswa), dan $N$ kueri tambahan (10 kali) dijalankan untuk mengambil relasi masing-masing mahasiswa. Total kueri menjadi $1 + 10 = 11$ kueri.
 - **Pengamatan Langkah 12:** Saat menggunakan Eager Loading `Mahasiswa::with('programStudi')`, Laravel hanya menjalankan **2 kueri SQL** (satu kueri mahasiswa dan satu kueri `WHERE in` untuk seluruh program studi terkait).
 - **Solusi:** Selalu gunakan **Eager Loading** via klausa `with(['namaRelasi'])` ketika mengambil data relasi yang akan ditampilkan berulang.
+
+---
+
+# 🌐 MODUL 4: Membangun RESTful API dengan Laravel 13
+
+### 1. Ringkasan Teori Modul 4
+- **Arsitektur REST (Representational State Transfer):**
+  - Mengakses dan memanipulasi *resource* melalui URI seragam (*Uniform Interface*).
+  - Bersifat *Stateless*: setiap request membawa konteks lengkap tanpa bergantung pada session server.
+  - Memisahkan tegas peran *Client* (penampil data) dan *Server* (penyedia data/API).
+- **Pemetaan Metode HTTP ke Operasi CRUD:**
+  - `GET` &rarr; Membaca koleksi / satu data (Status `200 OK`).
+  - `POST` &rarr; Membuat data baru (Status `201 Created`).
+  - `PUT/PATCH` &rarr; Memperbarui data (Status `200 OK`).
+  - `DELETE` &rarr; Menghapus data (Status `200 OK` atau `204 No Content`).
+- **Lapisan Penunjang API di Laravel:**
+  - **API Resource (`JsonResource`):** Lapisan transformasi data (*Transformer*) yang membatasi field yang dikirim ke publik, mencegah kebocoran data sensitif (*data exposure*), dan menjamin konsistensi tipe data.
+  - **Form Request:** Memisahkan logika validasi input dari controller untuk menjaga kode tetap bersih (*Single Responsibility Principle*).
+  - **Exception Handling Seragam:** Mengubah galat 404 (Not Found) dan 422 (Validation Error) menjadi struktur JSON yang konsisten di `bootstrap/app.php`.
+
+---
+
+### 2. Langkah Praktikum Modul 4
+
+#### Langkah 1 & 2: Instalasi Rute API dan Pembuatan Controller
+1. Mengaktifkan rute API di Laravel 13:
+   ```powershell
+   php artisan install:api
+   php artisan migrate
+   ```
+2. Membuat controller API resource:
+   ```powershell
+   php artisan make:controller Api/MahasiswaController --api
+   ```
+
+#### Langkah 3 s/d 5: API Resource, Form Request, dan Controller Mahasiswa
+- **Resource:** `app/Http/Resources/MahasiswaResource.php` memformat atribut mahasiswa beserta relasi program studi secara kondisional menggunakan `whenLoaded()`.
+- **Form Request:** 
+  - `StoreMahasiswaRequest`: Memvalidasi input pembuatan mahasiswa (`program_studi_id`, `nim`, `nama`, `email`, `angkatan`, `ipk`, `aktif`) beserta pesan kustom.
+  - `UpdateMahasiswaRequest`: Menggunakan aturan `sometimes` dan pengecualian ID pada validasi *unique* (`unique:mahasiswas,nim,$id`).
+- **Controller:** `app/Http/Controllers/Api/MahasiswaController.php` menyediakan endpoint lengkap:
+  - `index`: Mendukung pencarian (`?cari=`), filter `angkatan`, filter `program_studi_id`, pengurutan terproteksi (*whitelist sorting*), dan paginasi dinamis.
+  - `store`: Menyimpan data baru dan mengembalikan HTTP status 201.
+  - `show`: Mengambil detail data berdasarkan Route Model Binding.
+  - `update`: Memperbarui data parsial/penuh.
+  - `destroy`: Menghapus data mahasiswa.
+
+#### Langkah 6 & 10: Rute API dan Penyeragaman Respons Galat
+- **Rute:** Didaftarkan pada `routes/api.php` menggunakan `Route::apiResource('mahasiswa', MahasiswaController::class);`.
+- **Error Handling:** Dikonfigurasi pada `bootstrap/app.php` untuk merender `NotFoundHttpException` (404) dan `ValidationException` (422) dalam format JSON seragam:
+  ```json
+  {
+    "sukses": false,
+    "pesan": "Sumber daya tidak ditemukan"
+  }
+  ```
+
+---
+
+### 3. Tugas Praktikum Mandiri Modul 4
+
+#### 1. CRUD Resource Matakuliah (Tugas 1)
+- **Controller:** `app/Http/Controllers/Api/MatakuliahController.php`
+- **Resource:** `app/Http/Resources/MatakuliahResource.php`
+- **Form Request:** `StoreMatakuliahRequest.php` dan `UpdateMatakuliahRequest.php`
+- **Rute:** `Route::apiResource('matakuliah', MatakuliahController::class);`
+
+#### 2. Endpoint Mahasiswa per Program Studi (Tugas 2)
+- **Rute:** `GET /api/program-studi/{id}/mahasiswa`
+- **Implementasi:** Method `byProgramStudi` pada `MahasiswaController` yang mengambil relasi dari model `ProgramStudi::findOrFail($id)` dengan paginasi.
+
+#### 3. Parameter Fields pada Daftar Mahasiswa (Tugas 3)
+- **Implementasi:** Pada `MahasiswaResource.php`, jika request memuat query parameter `?fields=nim,nama,ipk`, sistem menggunakan `array_intersect_key` untuk menyaring dan hanya mengembalikan kunci-kunci kolom yang diminta klien.
+
+---
+
+### 4. Tabel Dokumentasi Seluruh Endpoint API
+
+| No | Metode | URI Endpoint | Parameter / Query | Contoh Request Body | Contoh Format Respons |
+|---|---|---|---|---|---|
+| 1 | `GET` | `/api/status` | - | - | `{"sukses": true, "pesan": "API Pemweb II aktif", "waktu": "2026-09-22T..."}` |
+| 2 | `GET` | `/api/mahasiswa` | `cari`, `angkatan`, `program_studi_id`, `urut`, `arah`, `per_halaman`, `fields` | - | `{"data": [{"id": 1, "nim": "...", "nama": "..."}], "links": {...}, "meta": {...}}` |
+| 3 | `POST` | `/api/mahasiswa` | - | `{"program_studi_id": 1, "nim": "H1A125999", "nama": "Dewi", "email": "dewi@mail.com", "angkatan": 2025, "ipk": 3.65}` | `{"sukses": true, "pesan": "Data mahasiswa berhasil dibuat", "data": {...}}` *(HTTP 201)* |
+| 4 | `GET` | `/api/mahasiswa/{id}` | `fields` | - | `{"sukses": true, "data": {"id": 1, "nim": "...", "nama": "..."}}` *(HTTP 200)* |
+| 5 | `PUT/PATCH` | `/api/mahasiswa/{id}` | - | `{"ipk": 3.90, "nama": "Nama Baru"}` | `{"sukses": true, "pesan": "Data mahasiswa berhasil diperbarui", "data": {...}}` *(HTTP 200)* |
+| 6 | `DELETE` | `/api/mahasiswa/{id}` | - | - | `{"sukses": true, "pesan": "Data mahasiswa berhasil dihapus"}` *(HTTP 200)* |
+| 7 | `GET` | `/api/program-studi/{id}/mahasiswa` | `per_halaman`, `fields` | - | `{"data": [...], "links": {...}, "meta": {...}}` *(HTTP 200)* |
+| 8 | `GET` | `/api/matakuliah` | `cari`, `semester`, `urut`, `arah`, `per_halaman` | - | `{"data": [{"id": 1, "kode": "IF101", "nama": "...", "sks": 3}], "links": {...}, "meta": {...}}` |
+| 9 | `POST` | `/api/matakuliah` | - | `{"kode": "TK2025", "nama": "Sistem Tertanam", "sks": 3, "semester": 5}` | `{"sukses": true, "pesan": "Data mata kuliah berhasil dibuat", "data": {...}}` *(HTTP 201)* |
+| 10 | `GET` | `/api/matakuliah/{id}` | - | - | `{"sukses": true, "data": {"id": 1, "kode": "...", "nama": "...", "sks": 3}}` |
+| 11 | `PUT/PATCH` | `/api/matakuliah/{id}` | - | `{"nama": "Sistem Tertanam Lanjut", "sks": 4}` | `{"sukses": true, "pesan": "Data mata kuliah berhasil diperbarui", "data": {...}}` |
+| 12 | `DELETE` | `/api/matakuliah/{id}` | - | - | `{"sukses": true, "pesan": "Data mata kuliah berhasil dihapus"}` |
+
+---
+
+### 5. Jawaban Pertanyaan Pembahasan Modul 4
+
+#### 1. Mengapa penamaan URI sebaiknya menggunakan kata benda jamak (*plural nouns*) dan bukan kata kerja?
+- **Jawaban:** 
+  Dalam filosofi arsitektur REST, URI bertindak sebagai pengidentifikasi sumber daya (*resource identifier*), bukan penunjuk aksi atau prosedur (*Remote Procedure Call / RPC*). Aksi manipulasi terhadap sumber daya tersebut sudah diwakili secara semantik oleh **Metode HTTP** standar (`GET` untuk membaca, `POST` untuk membuat, `PUT/PATCH` untuk memperbarui, dan `DELETE` untuk menghapus). 
+  Oleh karena itu, penamaan URI yang benar adalah menggunakan kata benda (misalnya `/api/mahasiswa` atau `/api/matakuliah`). Menyisipkan kata kerja seperti `/api/getMahasiswa` atau `/api/deleteMahasiswa` merupakan redundansi (*code smell*) yang menyalahi prinsip *Uniform Interface* pada REST. Bentuk jamak digunakan karena titik akhir (*endpoint*) tersebut secara alami mewakili sebuah koleksi data yang dapat berisi banyak entitas.
+
+#### 2. Jelaskan perbedaan status HTTP 401 dan 403 beserta contoh kasusnya!
+- **Jawaban:**
+  - **HTTP 401 Unauthorized:** Menunjukkan bahwa permintaan gagal karena **ketiadaan atau ketidakabsahan kredensial autentikasi** (*Authentication Failure / "Siapa Anda?"*). Pengguna belum terbukti identitasnya di sistem.
+    - *Contoh:* Pengguna mencoba mengakses endpoint `/api/profil-saya` tanpa menyertakan API Token / Bearer Token, atau token yang dikirimkan sudah kedaluwarsa.
+  - **HTTP 403 Forbidden:** Menunjukkan bahwa sistem telah mengenali identitas pengguna (*Authenticated*), tetapi pengguna tersebut **tidak memiliki hak akses / otorisasi** (*Authorization Failure / "Anda tidak boleh ke sini"*) terhadap sumber daya tersebut.
+    - *Contoh:* Seorang akun mahasiswa yang sudah berhasil login (terautentikasi) mencoba mengakses endpoint `/api/admin/hapus-pengguna` atau mencoba mengubah nilai mahasiswa lain. Server mengenali identitas mahasiswa tersebut, tetapi menolak permintaannya karena perannya bukan Admin.
+
+#### 3. Apa risiko keamanan apabila parameter pengurutan (*sorting*) pada Langkah 5 diterima tanpa pemeriksaan daftar kolom yang diizinkan (*whitelist*)?
+- **Jawaban:**
+  Jika parameter `urut` atau `$request->query('urut')` langsung dilewatkan ke method query Eloquent (misalnya `$kueri->orderBy($urutan)`) tanpa validasi atau sanitasi ketat:
+  1. **SQL Injection Tersembunyi:** Pada beberapa konfigurasi database, penyerang dapat menyisipkan injeksi SQL berbasis ekspresi atau logika *blind SQL injection* melalui klausa ORDER BY (misal: `?urut=(CASE+WHEN+(1=1)+THEN+nama+ELSE+ipk+END)`).
+  2. **Pembocoran Informasi Sensitif (*Information Disclosure*):** Klien jahat dapat mencoba menebak struktur kolom internal database yang seharusnya disembunyikan (seperti `password`, `remember_token`, atau kunci rahasia) dengan mengurutkan berdasarkan nama kolom tersebut. Jika kolom ada, kueri sukses; jika tidak, server memicu *database exception* 500 yang membocorkan jejak nama tabel/kolom ke publik.
+  Oleh karena itu, teknik **Whitelisting** (`in_array($urutan, $kolomDiizinkan, true)`) wajib diterapkan untuk membatasi pengurutan hanya pada kolom-kolom yang memang dirancang untuk publik.
+
+#### 4. Mengapa API Resource lebih baik daripada mengembalikan Model Eloquent secara langsung?
+- **Jawaban:**
+  1. **Enkapsulasi dan Keamanan Data:** Model Eloquent secara default memuat seluruh atribut tabel database. Mengembalikan model langsung berisiko membocorkan kolom sensitif (*data exposure*) seperti `password`, token, `deleted_at`, atau catatan audit internal. API Resource bertindak sebagai lapisan transformasi (*Presenter/Transformer Layer*) yang secara eksplisit menentukan hanya field yang aman yang dikirim ke klien.
+  2. **Pemisahan Struktur Basis Data dari Kontrak API (*Decoupling*):** Jika nama kolom di database diubah (misalnya kolom `program_studi_id` diubah namanya), bentuk respons JSON API tidak perlu berubah dan merusak aplikasi klien (Mobile App / Frontend) karena transformasi field dipetakan secara terpusat di dalam Resource.
+  3. **Konsistensi Format & Tipe Data (*Type Casting*):** API Resource memastikan nilai angka, float, boolean, dan format tanggal (seperti standar ISO-8601: `toIso8601String()`) selalu konsisten dan tidak bergantung pada representasi mentah string driver database.
+  4. **Pencegahan Beban Relasi yang Tidak Perlu:** Melalui helper seperti `$this->whenLoaded()`, relasi database hanya akan disertakan dalam JSON jika relasi tersebut benar-benar telah di-*eager load*, sehingga mencegah kueri relasi liar atau redundansi payload yang memperberat koneksi internet.
+
