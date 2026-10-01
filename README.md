@@ -33,6 +33,12 @@
   - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-4)
   - [4. Dokumentasi Endpoint API](#4-tabel-dokumentasi-seluruh-endpoint-api)
   - [5. Jawaban Pembahasan Modul 4](#5-jawaban-pertanyaan-pembahasan-modul-4)
+- [Modul 5: Autentikasi dan Otorisasi API dengan Laravel Sanctum](#-modul-5-autentikasi-dan-otorisasi-api-dengan-laravel-sanctum)
+  - [1. Ringkasan Teori](#1-ringkasan-teori-modul-5)
+  - [2. Langkah Praktikum](#2-langkah-praktikum-modul-5)
+  - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-5)
+  - [4. Skenario Pengujian Postman](#4-skenario-pengujian-postman-modul-5)
+  - [5. Jawaban Pembahasan Modul 5](#5-jawaban-pertanyaan-pembahasan-modul-5)
 
 ---
 
@@ -380,4 +386,107 @@
   2. **Pemisahan Struktur Basis Data dari Kontrak API (*Decoupling*):** Jika nama kolom di database diubah (misalnya kolom `program_studi_id` diubah namanya), bentuk respons JSON API tidak perlu berubah dan merusak aplikasi klien (Mobile App / Frontend) karena transformasi field dipetakan secara terpusat di dalam Resource.
   3. **Konsistensi Format & Tipe Data (*Type Casting*):** API Resource memastikan nilai angka, float, boolean, dan format tanggal (seperti standar ISO-8601: `toIso8601String()`) selalu konsisten dan tidak bergantung pada representasi mentah string driver database.
   4. **Pencegahan Beban Relasi yang Tidak Perlu:** Melalui helper seperti `$this->whenLoaded()`, relasi database hanya akan disertakan dalam JSON jika relasi tersebut benar-benar telah di-*eager load*, sehingga mencegah kueri relasi liar atau redundansi payload yang memperberat koneksi internet.
+
+---
+
+# 🔐 MODUL 5: Autentikasi dan Otorisasi API dengan Laravel Sanctum
+
+### 1. Ringkasan Teori Modul 5
+- **Autentikasi vs Otorisasi:**
+  - *Autentikasi:* Menjawab pertanyaan *"Siapa Anda?"* (memverifikasi identitas pengguna melalui email, password, dan token).
+  - *Otorisasi:* Menjawab pertanyaan *"Apakah Anda boleh melakukan aksi ini?"* (memvalidasi hak akses dan wewenang pengguna terhadap sumber daya tertentu).
+- **Autentikasi Sesi vs Token:**
+  - *Berbasis Sesi:* Status disimpan di memori server (*stateful*), menggunakan cookie, cocok untuk web browser monolith.
+  - *Berbasis Token:* Status disimpan di sisi klien (*stateless*), dikirim melalui header `Authorization: Bearer <token>`, cocok untuk RESTful API, mobile apps, dan sistem microservices yang mudah diskalakan.
+- **Laravel Sanctum:**
+  - Pustaka autentikasi ringan untuk SPA dan penerbitan API token acak (*personal access token*) yang disimpan dalam bentuk hash SHA-256 pada tabel `personal_access_tokens`.
+- **Token Abilities (Kemampuan Token):**
+  - Sanctum memungkinkan token membawa cakupan izin (*abilities/scopes*), seperti `['mahasiswa:baca']` untuk pengguna biasa atau `['mahasiswa:baca', 'mahasiswa:tulis']` untuk administrator.
+
+---
+
+### 2. Langkah Praktikum Modul 5
+
+#### Langkah 1 s/d 3: Konfigurasi Sanctum, Model User, dan Kolom Peran
+1. Memastikan migrasi tabel `personal_access_tokens` telah berjalan.
+2. Memasang trait `HasApiTokens` pada model `User` (`app/Models/User.php`).
+3. Menambahkan kolom `peran` (`enum/string` default `'mahasiswa'`) melalui migrasi `add_peran_to_users_table`.
+
+#### Langkah 4 & 5: Controller Autentikasi dan Rute API Terproteksi
+- **Controller:** `app/Http/Controllers/Api/AuthController.php`:
+  - `register`: Mendaftarkan pengguna baru dengan validasi kata sandi terstandarisasi, membuat token otomatis.
+  - `login`: Memverifikasi email dan hash password, menerbitkan token dengan kemampuan sesuai peran (`admin` mendapat hak `tulis`, `mahasiswa` hanya hak `baca`).
+  - `profil`: Menampilkan informasi akun yang sedang aktif beserta kemampuan token yang dipegang.
+  - `logout` & `logoutSemua`: Menghapus token aktif saat ini atau menghapus seluruh token perangkat di server.
+- **Proteksi Rute (`routes/api.php`):**
+  - Rute publik: `POST /api/auth/register` dan `POST /api/auth/login` (dibatasi lajunya via middleware `throttle:5,1`).
+  - Rute terlindungi `auth:sanctum`: profil, logout, dan pembacaan mahasiswa.
+  - Rute terlindungi `ability:mahasiswa:tulis`: penambahan, pengubahan, dan penghapusan mahasiswa.
+
+#### Langkah 10 & 11: Penanganan Galat & Pembatasan Laju (Throttle)
+- Dikonfigurasi di `bootstrap/app.php` untuk merender:
+  - `AuthenticationException` &rarr; HTTP 401: `{"sukses": false, "pesan": "Token tidak valid atau belum dikirim"}`.
+  - `AccessDeniedHttpException` / `MissingAbilityException` &rarr; HTTP 403: `{"sukses": false, "pesan": "Akses ditolak: kemampuan token tidak mencukupi"}`.
+- Menerapkan `throttle:5,1` pada rute login guna mencegah serangan *brute force*.
+
+---
+
+### 3. Tugas Praktikum Mandiri Modul 5
+
+#### 1. Endpoint Ubah Kata Sandi (Tugas 1)
+- **Metode & URI:** `PUT /api/auth/password`
+- **Controller:** Method `ubahPassword` pada `AuthController.php`.
+- **Logika:** Memvalidasi `password_lama` terhadap hash pengguna (`Hash::check()`), lalu memperbarui dengan `password` baru yang telah dikonfirmasi dan memenuhi standar keamanan.
+
+#### 2. Middleware Kustom `PeranAdmin` (Tugas 2)
+- **Berkas Middleware:** `app/Http/Middleware/PeranAdmin.php`
+- **Alias:** Didaftarkan sebagai `'peran.admin'` pada `bootstrap/app.php`.
+- **Implementasi:** Diterapkan khusus pada rute `DELETE /api/mahasiswa/{mahasiswa}`, sehingga pengguna yang tidak memiliki peran `admin` ditolak dengan status HTTP 403 Forbidden: `{"sukses": false, "pesan": "Akses ditolak: hanya administrator yang diizinkan"}`.
+
+#### 3. Kolom `terakhir_login` pada Tabel `users` (Tugas 3)
+- **Migrasi:** `add_terakhir_login_to_users_table` menambahkan kolom `timestamp('terakhir_login')->nullable()`.
+- **Pembaruan:** Diperbarui secara otomatis dengan `now()` setiap kali method `login()` pada `AuthController` berhasil dieksekusi, serta ditampilkan pada respons profil pengguna.
+
+---
+
+### 4. Skenario Pengujian Postman (Modul 5)
+
+| Skenario | Metode & Endpoint | Header & Body Utama | Ekspektasi Respons & Status | Analisis Keamanan |
+|---|---|---|---|---|
+| **1. Login Berhasil** | `POST /api/auth/login` | Body: `admin@unsoed.ac.id`, `rahasia123` | **200 OK**<br>Token Bearer diterbitkan, peran `admin`. | Kredensial valid, server menerbitkan token dengan kemampuan penuh. |
+| **2. Login Gagal** | `POST /api/auth/login` | Body: Password salah | **401 Unauthorized**<br>`"Email atau kata sandi tidak sesuai"` | Mencegah akses tanpa membocorkan apakah email terdaftar atau tidak. |
+| **3. Akses Tanpa Token** | `GET /api/auth/profil` | Tanpa Header Authorization | **401 Unauthorized**<br>`"Token tidak valid atau belum dikirim"` | Middleware Sanctum memblokir permintaan tak terautentikasi. |
+| **4. Akses Pasca Logout** | `GET /api/auth/profil` | Header: Bearer Token yang sudah di-logout | **401 Unauthorized**<br>`"Token tidak valid atau belum dikirim"` | Token telah dihapus permanen dari basis data server. |
+| **5. Akses Tanpa Kemampuan Cukup** | `POST /api/mahasiswa` | Header: Bearer Token mahasiswa | **403 Forbidden**<br>`"Akses ditolak: kemampuan token tidak mencukupi"` | Otorisasi *token ability* menolak aksi tulis dari token baca. |
+
+---
+
+### 5. Jawaban Pertanyaan Pembahasan Modul 5
+
+#### 1. Mengapa kata sandi harus disimpan dalam bentuk hash dan bukan terenkripsi dua arah?
+- **Jawaban:**
+  - **Fungsi Satu Arah (*One-Way Function*):** *Hashing* (seperti algoritma Bcrypt atau Argon2) dirancang bersifat satu arah, artinya data asli yang telah di-hash secara matematis tidak dapat diubah kembali (*irreversible*) ke bentuk kata sandi aslinya.
+  - **Bahaya Enkripsi Dua Arah (*Two-Way Encryption*):** Enkripsi dua arah membutuhkan sebuah kunci dekripsi (*secret decryption key*). Jika basis data mengalami kebocoran dan penyerang berhasil mendapatkan kunci dekripsi dari berkas konfigurasi (`.env`), seluruh kata sandi asli pengguna dapat didekripsi dengan mudah.
+  - **Perlindungan Terhadap Kebocoran Data:** Dengan menyimpan kata sandi dalam bentuk hash (yang dilengkapi *salt* unik), administrator sistem maupun peretas tidak dapat melihat kata sandi asli pengguna. Sistem hanya memvalidasi kecocokan dengan cara men-hash ulang kata sandi yang diinputkan pengguna saat login lalu membandingkan hasil hash-nya (`Hash::check()`).
+
+#### 2. Apa perbedaan antara kemampuan token (*token abilities*) pada Sanctum dan peran pengguna (*user roles*) pada tabel `users`?
+- **Jawaban:**
+  - **Peran Pengguna (*User Roles*):** Melekat pada **identitas entitas pengguna** secara permanen di database (misalnya: `admin`, `dosen`, `mahasiswa`). Peran menentukan hak istimewa global dan wewenang pengguna tersebut di dalam sistem bisnis.
+  - **Kemampuan Token (*Token Abilities/Scopes*):** Melekat pada **sesi atau token perangkat spesifik** yang sedang digunakan oleh pengguna tersebut saat itu. 
+  - **Hubungan Keduanya:** Satu pengguna dapat memiliki peran `admin`, namun ia dapat menerbitkan token perangkat dengan kemampuan terbatas (misal hanya `mahasiswa:baca` untuk aplikasi seluler pemantau, atau `['*']` untuk desktop admin). Dengan kata lain, peran menentukan apa yang *bisa dimiliki* pengguna, sedangkan kemampuan token menentukan apa yang *diizinkan untuk dilakukan* oleh aplikasi klien tertentu yang memegang token tersebut.
+
+#### 3. Jelaskan risiko penyimpanan token pada `localStorage` peramban serta alternatif yang lebih aman!
+- **Jawaban:**
+  - **Risiko Penyimpanan di `localStorage`:**
+    `localStorage` dapat diakses langsung oleh skrip JavaScript apa pun yang berjalan di peramban. Jika aplikasi web memiliki celah keamanan **XSS (Cross-Site Scripting)**, penyerang dapat menyuntikkan skrip jahat pihak ketiga untuk membaca `localStorage.getItem('token')` dan mencuri Bearer Token pengguna (*Token Theft / Session Hijacking*).
+  - **Alternatif yang Lebih Aman:**
+    1. **`httpOnly Cookie`:** Menyimpan token ke dalam cookie dengan atribut `HttpOnly`, `Secure`, dan `SameSite=Strict`. Cookie jenis ini tidak dapat dibaca oleh kode JavaScript peramban melalui `document.cookie`, sehingga kebal terhadap pencurian lewat serangan XSS.
+    2. **Penyimpanan di Memory (In-Memory State):** Menyimpan token hanya di memori runtime JavaScript (misalnya variabel aplikasi frontend React/Vue) dan menggunakan mekanisme *Refresh Token* melalui `httpOnly cookie` untuk meminta token akses baru saat halaman dimuat ulang.
+
+#### 4. Mengapa endpoint logout perlu menghapus token di sisi server padahal token disimpan pada klien?
+- **Jawaban:**
+  - Jika proses logout hanya menghapus token di sisi klien (misalnya menghapus token dari memori atau `localStorage`), **token tersebut sebenarnya masih berstatus valid di sisi server**. 
+  - Apabila token tersebut sempat disalin, disadap, atau dicuri oleh pihak ketiga sebelum tombol logout ditekan, penyerang masih dapat terus menggunakan token tersebut untuk mengakses API secara ilegal hingga waktu kedaluwarsanya habis.
+  - Oleh karena itu, endpoint logout **wajib mengeksekusi penghapusan rekaman token dari tabel database server (`personal_access_tokens`)** melalui `$request->user()->currentAccessToken()->delete()`. Dengan demikian, token tersebut langsung hangus (*revoked*) seketika itu juga dan tidak dapat lagi digunakan oleh siapa pun.
+
 
