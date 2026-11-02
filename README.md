@@ -38,8 +38,13 @@
   - [2. Langkah Praktikum](#2-langkah-praktikum-modul-5)
   - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-5)
   - [4. Skenario Pengujian Postman](#4-skenario-pengujian-postman-modul-5)
-  - [5. Jawaban Pembahasan Modul 5](#5-jawaban-pertanyaan-pembahasan-modul-5)
-
+-  - [5. Jawaban Pembahasan Modul 5](#5-jawaban-pertanyaan-pembahasan-modul-5)
+- [Modul 6: Fondasi Go dan Framework Fiber v3](#-modul-6-fondasi-go-dan-framework-fiber-v3)
+  - [1. Ringkasan Teori](#1-ringkasan-teori-modul-6)
+  - [2. Langkah Praktikum](#2-langkah-praktikum-modul-6)
+  - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-6)
+  - [4. Dokumentasi Seluruh Endpoint API](#4-tabel-dokumentasi-seluruh-endpoint-api-modul-6)
+  - [5. Jawaban Pembahasan Modul 6](#5-jawaban-pertanyaan-pembahasan-modul-6)
 ---
 
 # 📦 MODUL 1: Penyiapan Lingkungan Pengembangan Web Modern
@@ -490,3 +495,183 @@
   - Oleh karena itu, endpoint logout **wajib mengeksekusi penghapusan rekaman token dari tabel database server (`personal_access_tokens`)** melalui `$request->user()->currentAccessToken()->delete()`. Dengan demikian, token tersebut langsung hangus (*revoked*) seketika itu juga dan tidak dapat lagi digunakan oleh siapa pun.
 
 
+
+---
+
+# ⚡ MODUL 6: Fondasi Go dan Framework Fiber v3
+
+### 1. Ringkasan Teori Modul 6
+- **Karakter Bahasa Go:**
+  - Bahasa pemrograman terkompilasi (*compiled*) dengan pengetikan statis (*statically typed*).
+  - Dikompilasi menjadi satu berkas biner mandiri (*single standalone executable*) tanpa dependensi runtime interpreter eksternal.
+  - Memiliki fitur konkurensi native yang ringan melalui *goroutine* dan saluran komunikasi (*channel*).
+  - Tipe data terdeteksi pada fase kompilasi (*compile-time error detection*), bukan saat runtime.
+- **Pola Penanganan Galat (*Error Handling*) pada Go:**
+  - Go tidak menggunakan mekanisme *exception/try-catch*.
+  - Setiap fungsi yang berpotensi gagal mengembalikan nilai galat (`error`) sebagai nilai kembalian terakhir:
+    ```go
+    hasil, err := lakukanSesuatu()
+    if err != nil {
+        return err
+    }
+    ```
+  - Menuntut penanganan kegagalan secara eksplisit di setiap fungsi.
+- **Framework Fiber v3:**
+  - Framework web berkecepatan tinggi yang dibangun di atas `fasthttp`, dengan sintaks ekspresif yang mirip Express.js.
+  - Pada Fiber v3, konteks request direpresentasikan oleh antarmuka `fiber.Ctx` yang diterima handler sebagai nilai (bukan pointer):
+    ```go
+    func(c fiber.Ctx) error
+    ```
+  - Setiap handler wajib mengembalikan `error`. Jika terjadi galat, Fiber meneruskannya ke `ErrorHandler` global.
+- **Konvensi Struktur Proyek Go:**
+  - Mengikuti *Standard Go Project Layout*:
+    - `cmd/api/main.go`: Titik masuk utama aplikasi (entrypoint), inisialisasi server, konfigurasi, dan injeksi middleware.
+    - `internal/`: Paket privat yang hanya boleh diimpor oleh modul ini sendiri (menjaga enkapsulasi kode).
+    - `internal/config/`: Pembacaan variabel lingkungan (`.env`).
+    - `internal/model/`: Definisi struct data dan representasi entitas dengan tag JSON (`json:"..."`).
+    - `internal/handler/`: Fungsi pengolah logika permintaan HTTP.
+    - `internal/middleware/`: Interseptor siklus hidup request-response HTTP.
+    - `internal/router/`: Pendefinisian dan pengelompokan rute (`Group`).
+
+---
+
+### 2. Langkah Praktikum Modul 6
+
+#### Langkah 1: Menyegarkan Dasar Go (`latihan-fiber/dasar-go`)
+- Inisialisasi modul: `go mod init dasar-go`.
+- Berkas `dasar-go/main.go` memuat struct `Mahasiswa`, fungsi `cariMahasiswa` dengan pengembalian multi-nilai `(Mahasiswa, error)`, fungsi perhitungan rata-rata `rerataIpk`, serta manipulasi struktur data `slice` dan `map[int]int` untuk menghitung jumlah mahasiswa per angkatan.
+- Eksekusi: `go run main.go` menghasilkan data pencarian, rata-rata IPK 3.48, dan sebaran per angkatan.
+
+#### Langkah 2 s/d 4: Struktur Proyek Fiber & Model Data (`latihan-fiber/latihan-fiber-api`)
+- Inisialisasi modul: `go mod init latihan-fiber-api`.
+- Instalasi dependensi:
+  ```powershell
+  go get github.com/gofiber/fiber/v3
+  go get github.com/joho/godotenv
+  ```
+- **Konfigurasi Lingkungan (`internal/config/config.go`):** Memuat berkas `.env` (`APP_NAME`, `APP_PORT`, `APP_ENV`, dan `API_KEY`) menggunakan `godotenv.Load()` dengan fungsi fallback nilai bawaan (`ambil()`).
+- **Model Entitas (`internal/model/mahasiswa.go`):** Mendefinisikan struct `Mahasiswa` dengan tag anotasi serialisasi JSON serta slice `Daftar` berisi data awal mahasiswa.
+
+#### Langkah 5 s/d 8: Handler, Middleware, Router, dan Berkas Utama
+- **Handler Mahasiswa (`internal/handler/mahasiswa_handler.go`):**
+  - `DaftarMahasiswa`: Mengambil parameter kueri `angkatan` via `c.Query()` dengan validasi angka (`strconv.Atoi`), melempar `fiber.StatusBadRequest` jika non-numerik.
+  - `DetailMahasiswa`: Membaca parameter URL `:id` via `c.Params()`, mencari data pada model, atau melempar `fiber.StatusNotFound` (404) jika data tidak ditemukan.
+- **Middleware Kustom Waktu Proses (`internal/middleware/waktu_proses.go`):** Menghitung durasi pemrosesan permintaan dengan `time.Since()` dan menyematkan header respons `X-Waktu-Proses-Ms`.
+- **Router (`internal/router/router.go`):** Mendaftarkan grup rute `/api`, endpoint status `/api/status`, dan subgrup `/api/mahasiswa`.
+- **Berkas Utama (`cmd/api/main.go`):** Mengatur `fiber.Config` dengan `penanganGalat` (Global Error Handler), memasang middleware standar (`requestid`, `logger`, `recover`), mendaftarkan rute, dan menjalankan server.
+
+#### Langkah 9 s/d 11: Pengujian, Rute Wildcard 404, dan Build Binary
+- Pembersihan dependensi otomatis: `go mod tidy`.
+- **Rute Wildcard 404:** Middleware tanpa path yang diletakkan tepat sebelum `app.Listen` untuk menangkap seluruh URL tak dikenal dengan status 404 dan pesan JSON `"Endpoint tidak tersedia"`.
+- **Kompilasi Binary Executable:**
+  ```powershell
+  go build -o bin/api.exe ./cmd/api
+  ```
+  Menghasilkan berkas binary tunggal `bin/api.exe` yang dapat langsung dieksekusi tanpa memerlukan instalasi Go SDK pada komputer target.
+
+---
+
+### 3. Tugas Praktikum Mandiri Modul 6
+
+#### 1. Endpoint Detail Mahasiswa Berdasarkan NIM (Tugas 1)
+- **Metode & URI:** `GET /api/mahasiswa/nim/:nim`
+- **Handler:** `DetailMahasiswaByNim` pada `internal/handler/mahasiswa_handler.go`.
+- **Logika:** Mengambil parameter `nim` melalui `c.Params("nim")` dan membandingkannya menggunakan `strings.EqualFold()`. Jika ditemukan, mengembalikan data mahasiswa terkait; jika tidak, melempar `fiber.StatusNotFound`.
+- **Urutan Registrasi Rute:** Rute `/nim/:nim` didaftarkan sebelum `/:id` pada router agar parameter `:id` tidak secara keliru menangkap segmen literal `"nim"`.
+
+#### 2. Parameter Kueri Pengurutan `urut` (Tugas 2)
+- **Metode & URI:** `GET /api/mahasiswa?urut=nama` atau `GET /api/mahasiswa?urut=ipk`
+- **Handler:** Diintegrasikan ke dalam `DaftarMahasiswa` pada `internal/handler/mahasiswa_handler.go`.
+- **Logika:** Membaca query string `urut := strings.ToLower(c.Query("urut", ""))`:
+  - Jika `urut == "nama"`: Mengurutkan data mahasiswa secara alfabetis (A-Z) menggunakan `sort.SliceStable()`.
+  - Jika `urut == "ipk"`: Mengurutkan data mahasiswa dari IPK tertinggi ke terendah (*descending*).
+  - Melakukan salinan slice (`copy`) sebelum pengurutan agar urutan pada memori model asli tetap terjaga.
+
+#### 3. Middleware Kustom `KunciApi` (Tugas 3)
+- **Berkas Middleware:** `internal/middleware/kunci_api.go`
+- **Konfigurasi `.env`:** Variabel `API_KEY=rahasia-fiber-2026`.
+- **Logika:** Memeriksa nilai header permintaan `X-Api-Key` via `c.Get("X-Api-Key")`.
+  - Jika header kosong atau nilainya tidak cocok dengan konfigurasi `.env`, permintaan ditolak dengan status HTTP **401 Unauthorized** dan payload:
+    ```json
+    {
+      "sukses": false,
+      "pesan": "Akses ditolak: API Key tidak valid atau tidak disertakan"
+    }
+    ```
+  - Jika cocok, melanjutkan eksekusi ke handler berikutnya via `c.Next()`.
+- **Penerapan Rute:** Diterapkan pada rute `/api/rahasia` untuk mengamankan data sensitif.
+
+#### 4. Tabel Perbandingan Mekanisme Middleware Laravel vs Middleware Fiber (Tugas 4)
+
+| No | Kriteria / Aspek | Middleware Laravel 13 (PHP) | Middleware Fiber v3 (Go) |
+|---|---|---|---|
+| 1 | **Tanda Tangan Fungsi (*Signature*)** | Menerima instance `$request` dan closure `$next`: <br>`handle(Request $request, Closure $next)` | Menerima konteks `fiber.Ctx` dan mengembalikan galat: <br>`func(c fiber.Ctx) error` |
+| 2 | **Penerusan Request** | Mengembalikan hasil pemanggilan closure: <br>`return $next($request);` | Memanggil method konteks dan mengembalikan galat jika ada: <br>`return c.Next()` atau `err := c.Next()` |
+| 3 | **Registrasi & Alias** | Didaftarkan secara terpusat pada `bootstrap/app.php` melalui closure `$middleware->alias([...])` atau append middleware global. | Didaftarkan langsung pada objek `app.Use(...)` atau disematkan langsung sebagai argumen fungsi pada `app.Group(...)` / handler rute. |
+| 4 | **Perilaku Pasca-Handler (*After Middleware*)** | Kode dieksekusi setelah `$response = $next($request);`, lalu memodifikasi objek `$response` sebelum di-return. | Mengukur waktu/modifikasi header tepat setelah baris `err := c.Next()`, lalu memanggil method mutasi `c.Set(...)`. |
+| 5 | **Overhead & Performa** | Relatif lebih lambat karena siklus hidup framework PHP memerlukan inisialisasi container objek dan refleksi pada setiap siklus request. | Sangat cepat (mendekati *zero-allocation*) karena memanfaatkan antarmuka native Go di atas arsitektur event-driven `fasthttp`. |
+| 6 | **Penanganan Galat (*Error Pipeline*)** | Menangkap exception lewat `try-catch` atau dilempar ke Exception Handler Laravel (`bootstrap/app.php`). | Nilai `error` dikembalikan langsung ke tumpukan eksekusi Fiber dan ditangani secara seragam oleh `fiber.Config.ErrorHandler`. |
+
+---
+
+### 4. Tabel Dokumentasi Seluruh Endpoint API (Modul 6)
+
+| No | Metode | Endpoint URI | Parameter / Header | Status HTTP | Contoh Respons JSON | Keterangan / Fungsi |
+|---|---|---|---|---|---|---|
+| 1 | `GET` | `/api/status` | - | `200 OK` | `{"pesan":"API Fiber aktif","sukses":true}` | Pengecekan kesehatan server (*health-check*). |
+| 2 | `GET` | `/api/mahasiswa` | - | `200 OK` | `{"data":[...],"sukses":true}` | Mengambil seluruh koleksi data mahasiswa. |
+| 3 | `GET` | `/api/mahasiswa` | Query: `?angkatan=2023` | `200 OK` | `{"data":[...2 mahasiswa...],"sukses":true}` | Filter mahasiswa berdasarkan tahun angkatan. |
+| 4 | `GET` | `/api/mahasiswa` | Query: `?angkatan=abc` | `400 Bad Request` | `{"pesan":"Parameter angkatan harus berupa angka","sukses":false}` | Validasi tipe data parameter kueri. |
+| 5 | `GET` | `/api/mahasiswa` | Query: `?urut=nama` | `200 OK` | `{"data":[{"nama":"Andi"...},{"nama":"Bunga"...}],"sukses":true}` | **Tugas 2:** Pengurutan mahasiswa berdasarkan nama (A-Z). |
+| 6 | `GET` | `/api/mahasiswa` | Query: `?urut=ipk` | `200 OK` | `{"data":[{"nama":"Bunga","ipk":3.80}...],"sukses":true}` | **Tugas 2:** Pengurutan mahasiswa berdasarkan IPK tertinggi. |
+| 7 | `GET` | `/api/mahasiswa/:id` | Param: `id = 2` | `200 OK` | `{"data":{"id":2,"nama":"Bunga Lestari"...},"sukses":true}` | Mengambil detail mahasiswa berdasarkan ID. |
+| 8 | `GET` | `/api/mahasiswa/:id` | Param: `id = 99` | `404 Not Found` | `{"pesan":"Mahasiswa tidak ditemukan","sukses":false}` | Respons ketika ID mahasiswa tidak terdaftar. |
+| 9 | `GET` | `/api/mahasiswa/nim/:nim` | Param: `nim = H1A123002` | `200 OK` | `{"data":{"nim":"H1A123002","nama":"Bunga Lestari"...},"sukses":true}` | **Tugas 1:** Mengambil detail mahasiswa berdasarkan NIM. |
+| 10 | `GET` | `/api/mahasiswa/nim/:nim` | Param: `nim = UNKNOWN` | `404 Not Found` | `{"pesan":"Mahasiswa dengan NIM UNKNOWN tidak ditemukan","sukses":false}` | **Tugas 1:** Respons ketika NIM tidak ditemukan. |
+| 11 | `GET` | `/api/rahasia` | Tanpa Header `X-Api-Key` | `401 Unauthorized` | `{"pesan":"Akses ditolak: API Key tidak valid...","sukses":false}` | **Tugas 3:** Penolakan akses jika API Key tidak disertakan. |
+| 12 | `GET` | `/api/rahasia` | Header: `X-Api-Key: salah123` | `401 Unauthorized` | `{"pesan":"Akses ditolak: API Key tidak valid...","sukses":false}` | **Tugas 3:** Penolakan akses jika nilai API Key tidak cocok. |
+| 13 | `GET` | `/api/rahasia` | Header: `X-Api-Key: rahasia-fiber-2026` | `200 OK` | `{"pesan":"Akses berhasil...","sukses":true}` | **Tugas 3:** Akses berhasil dengan API Key yang valid. |
+| 14 | `*` | `/*` (Wildcard) | URL acak yang tidak terdaftar | `404 Not Found` | `{"pesan":"Endpoint tidak tersedia","sukses":false}` | **Langkah 10:** Penangkap global rute 404 tak terdaftar. |
+
+Setiap respons dari server Fiber ini secara otomatis menyertakan header pelacak:
+- `X-Waktu-Proses-Ms`: Durasi pemrosesan permintaan dalam milidetik (dari middleware `WaktuProses`).
+- `X-Request-Id`: Identifier unik permintaan berbasis UUID (dari middleware `requestid`).
+
+---
+
+### 5. Jawaban Pertanyaan Pembahasan Modul 6
+
+#### 1. Mengapa handler Fiber selalu mengembalikan nilai bertipe `error`?
+- **Jawaban:**
+  - **Pola Desain Idiomatik Go:** Di dalam bahasa Go, tidak terdapat mekanisme *exception catching* berbasis kata kunci `try-catch`. Oleh karena itu, pengembalian tipe `error` merupakan cara standar untuk mengomunikasikan kegagalan operasi kepada pemanggil fungsi.
+  - **Pendelegasian ke Error Handler Terpusat:** Dengan mengharuskan handler mengembalikan `error` (`func(c fiber.Ctx) error`), Fiber dapat menangkap galat tersebut secara otomatis pada tingkatan framework dan meneruskannya ke **Global Error Handler** (`fiber.Config.ErrorHandler`).
+  - **Penyederhanaan Logika Handler:** Pengembang tidak perlu menulis blok pengolah format galat JSON berulang kali di setiap fungsi handler. Cukup dengan mengembalikan `return fiber.NewError(kode, pesan)` atau `return err`, Fiber yang akan menyusun respons galat standar bagi klien. Jika operasi sukses tanpa masalah, handler mengembalikan `return nil` (atau `return c.JSON(...)` yang mengembalikan `error` nil jika serialisasi JSON berhasil).
+
+#### 2. Jelaskan fungsi middleware `recover` dan akibat yang timbul apabila middleware tersebut tidak dipasang!
+- **Jawaban:**
+  - **Fungsi Middleware `recover`:**
+    Middleware `recover` berfungsi untuk mencegat dan memulihkan kondisi kepanikan sistem (*panic*) yang terjadi selama siklus penanganan permintaan HTTP menggunakan fungsi bawaan Go `recover()`.
+  - **Akibat Jika Tidak Dipasang:**
+    Dalam runtime Go, jika terjadi operasi terlarang seperti *nil pointer dereference*, *index out of range* pada slice, atau pemanggilan *panic* manual tanpa adanya penangkap `recover()`, maka **seluruh proses aplikasi Go akan langsung berhenti (crash / shutdown seketika)**. Akibatnya, server web akan mati total dan seluruh koneksi pengguna lain yang sedang aktif akan terputus.
+  - **Manfaat Pemasangan:**
+    Dengan memasang `app.Use(recover.New())`, kepanikan yang terjadi hanya akan menggagalkan permintaan yang bersangkutan saja (diubah menjadi respons galat HTTP 500 Internal Server Error yang aman), sedangkan server web tetap berdiri kokoh melayani permintaan-permintaan lainnya.
+
+#### 3. Apa maksud folder `internal` pada konvensi proyek Go?
+- **Jawaban:**
+  - **Mekanisme Enkapsulasi Tingkat Compiler:**
+    Di dalam ekosistem Go, direktori bernama `internal/` memiliki makna khusus yang ditegakkan langsung oleh compiler Go (*compiler-enforced restriction*).
+  - **Aturan Akses:**
+    Paket-paket kode yang berada di dalam folder `internal/` **hanya dapat diimpor (*import*) oleh kode yang berada dalam pohon direktori modul yang sama** (proyek itu sendiri). Modul atau pustaka luar (*external packages / third-party projects*) tidak diizinkan untuk mengimpor paket di dalam `internal/`.
+  - **Tujuan Arsitektur:**
+    Mencegah kebocoran implementasi privat ke pihak luar, melindungi API internal agar tidak dijadikan dependensi oleh proyek eksternal, serta memberikan keleluasaan bagi pengembang untuk melakukan *refactoring* modul internal tanpa khawatir merusak kompatibilitas pustaka (*backward compatibility*).
+
+#### 4. Bandingkan ukuran dan cara distribusi hasil build Go dengan hasil deployment aplikasi Laravel!
+- **Jawaban:**
+
+| Parameter | Hasil Build Go (Fiber) | Hasil Deployment Laravel (PHP) |
+|---|---|---|
+| **Bentuk Hasil Akhir** | **Single Standalone Binary Executable** (satu file biner mentah, misal `api.exe` atau binary Linux ELF). | **Kumpulan Ribuan Berkas Teks Skrip PHP** (terdiri dari folder `app/`, `vendor/`, `bootstrap/`, `config/`, dsb.). |
+| **Ukuran Distribusi (*Artifact Size*)** | **Sangat Kompak:** Hanya berkisar antara **15 MB – 25 MB** (bahkan bisa dipadatkan hingga < 10 MB menggunakan utilitas `upx`). | **Sangat Besar:** Mencapai **100 MB – 300+ MB** karena besarnya folder `vendor/` hasil instalasi paket Composer. |
+| **Kebutuhan Runtime Target** | **Nir-Dependensi (*Zero Runtime*):** Tidak membutuhkan runtime Go SDK, compiler, atau web server eksternal apa pun pada mesin server. | **Memerlukan Lingkungan Lengkap:** Server wajib memiliki PHP CLI / PHP-FPM, ekstensi-ekstensi PHP (`pdo_mysql`, `mbstring`, dsb.), web server (Nginx/Apache), dan Composer. |
+| **Cara Distribusi / Deployment** | Cukup menyalin satu berkas binary biner bersama file `.env` menggunakan `scp`/`rsync`, lalu menjalankannya sebagai service `systemd` atau *scratch Docker image*. | Memerlukan kloning repositori Git, menjalankan `composer install --no-dev`, `php artisan migrate`, `php artisan config:cache`, serta konfigurasi virtual host web server. |
+| **Waktu Startup (*Boot Time*)** | **Instan (< 5 milidetik):** Server langsung siap menerima lalu lintas request saat binary dieksekusi. | **Puluhan hingga Ratusan Milidetik:** Server harus memuat ribuan berkas PHP ke memori dan menginisialisasi service provider pada setiap proses pekerja. |
