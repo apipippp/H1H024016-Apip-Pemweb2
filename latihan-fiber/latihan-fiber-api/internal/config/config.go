@@ -10,7 +10,13 @@ type Konfigurasi struct {
    NamaAplikasi string
    Port         string
    Lingkungan   string
-   ApiKey       string // tugas 3 langkah 3.2
+   ApiKey       string
+
+   DbHost  string
+   DbPort  string
+   DbNama  string
+   DbUser  string
+   DbSandi string
 }
 
 func Muat() Konfigurasi {
@@ -18,9 +24,15 @@ func Muat() Konfigurasi {
 
    return Konfigurasi{
       NamaAplikasi: ambil("APP_NAME", "Fiber API"),
-      Port:         ambil("APP_PORT", "3000"),
+      Port:         ambil("APP_PORT", "3100"),
       Lingkungan:   ambil("APP_ENV", "local"),
-      ApiKey:       ambil("API_KEY", "rahasia-fiber-2026"), //tugas 3 langkah 3.2
+      ApiKey:       ambil("API_KEY", "rahasia-fiber-2026"),
+
+      DbHost:  ambil("DB_HOST", "127.0.0.1"),
+      DbPort:  ambil("DB_PORT", "3306"),
+      DbNama:  ambil("DB_NAME", "pemweb2_fiber"),
+      DbUser:  ambil("DB_USER", "root"),
+      DbSandi: ambil("DB_PASS", ""),
    }
 }
 

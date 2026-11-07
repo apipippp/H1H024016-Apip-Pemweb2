@@ -45,6 +45,12 @@
   - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-6)
   - [4. Dokumentasi Seluruh Endpoint API](#4-tabel-dokumentasi-seluruh-endpoint-api-modul-6)
   - [5. Jawaban Pembahasan Modul 6](#5-jawaban-pertanyaan-pembahasan-modul-6)
+- [Modul 7: RESTful API CRUD dengan Fiber v3 dan GORM](#-modul-7-restful-api-crud-dengan-fiber-v3-dan-gorm)
+  - [1. Ringkasan Teori](#1-ringkasan-teori-modul-7)
+  - [2. Langkah Praktikum](#2-langkah-praktikum-modul-7)
+  - [3. Tugas Praktikum Mandiri](#3-tugas-praktikum-mandiri-modul-7)
+  - [4. Dokumentasi Seluruh Endpoint API](#4-tabel-dokumentasi-seluruh-endpoint-api-modul-7)
+  - [5. Jawaban Pembahasan Modul 7](#5-jawaban-pertanyaan-pembahasan-modul-7)
 ---
 
 # 📦 MODUL 1: Penyiapan Lingkungan Pengembangan Web Modern
@@ -675,3 +681,115 @@ Setiap respons dari server Fiber ini secara otomatis menyertakan header pelacak:
 | **Kebutuhan Runtime Target** | **Nir-Dependensi (*Zero Runtime*):** Tidak membutuhkan runtime Go SDK, compiler, atau web server eksternal apa pun pada mesin server. | **Memerlukan Lingkungan Lengkap:** Server wajib memiliki PHP CLI / PHP-FPM, ekstensi-ekstensi PHP (`pdo_mysql`, `mbstring`, dsb.), web server (Nginx/Apache), dan Composer. |
 | **Cara Distribusi / Deployment** | Cukup menyalin satu berkas binary biner bersama file `.env` menggunakan `scp`/`rsync`, lalu menjalankannya sebagai service `systemd` atau *scratch Docker image*. | Memerlukan kloning repositori Git, menjalankan `composer install --no-dev`, `php artisan migrate`, `php artisan config:cache`, serta konfigurasi virtual host web server. |
 | **Waktu Startup (*Boot Time*)** | **Instan (< 5 milidetik):** Server langsung siap menerima lalu lintas request saat binary dieksekusi. | **Puluhan hingga Ratusan Milidetik:** Server harus memuat ribuan berkas PHP ke memori dan menginisialisasi service provider pada setiap proses pekerja. |
+
+---
+
+# 🗄️ MODUL 7: RESTful API CRUD dengan Fiber v3 dan GORM
+
+### 1. Ringkasan Teori Modul 7
+- **GORM:**
+  - ORM (*Object Relational Mapping*) paling populer di ekosistem Go yang menyediakan pemetaan struct ke tabel basis data, pembuatan kueri berantai (*method chaining*), relasi (*associations*), hook siklus hidup, dan migrasi otomatis.
+  - Berbeda dengan Eloquent di Laravel yang menerapkan *Active Record* penuh, GORM memisahkan objek data dari koneksi database. Operasi database dieksekusi melalui instance `*gorm.DB` terpusat.
+- **Pemisahan Lapisan Arsitektur (*Layered Architecture*):**
+  - **Handler:** Bertanggung jawab membaca parameter HTTP (URL param, query string, request body DTO) dan memformat respons JSON bagi klien.
+  - **Repository:** Bertanggung jawab berinteraksi langsung dengan basis data (`Find`, `First`, `Create`, `Save`, `Delete`, `Where`, `Preload`).
+  - Mempermudah pengujian terisolasi (*unit testing*) dan menjaga prinsip *Single Responsibility Principle*.
+- **Migrasi Otomatis (*AutoMigrate*):**
+  - Method `DB.AutoMigrate()` secara otomatis membuat tabel baru, menambahkan kolom baru, serta membuat indeks yang didefinisikan pada struct model tanpa menghapus atau merusak kolom yang telah ada.
+
+---
+
+### 2. Langkah Praktikum Modul 7
+- **Langkah 1 & 2:** Memasang driver MySQL dan pustaka inti GORM:
+  ```powershell
+  go get gorm.io/gorm
+  go get gorm.io/driver/mysql
+  ```
+  Menyiapkan database MySQL `pemweb2_fiber` dan melengkapi berkas `.env`.
+- **Langkah 3 & 4:** Memperluas `internal/config/config.go` dengan parameter `DbHost`, `DbPort`, `DbNama`, `DbUser`, dan `DbSandi`. Membuat koneksi database di `internal/config/database.go` dengan mengaktifkan GORM Logger mode info.
+- **Langkah 5 & 6:** Mendefinisikan model `ProgramStudi` dan `Mahasiswa` dengan tag GORM dan relasi Foreign Key di `internal/model/mahasiswa.go`. Menjalankan `AutoMigrate` dan seeder 3 Program Studi di `internal/config/migrasi.go`.
+- **Langkah 7 s/d 11:** Membangun lapisan repository `internal/repository/mahasiswa_repository.go` dengan pagination dan filter pencarian nama/NIM serta angkatan. Menuliskan DTO permintaan di `internal/handler/dto.go` dan handler CRUD lengkap di `internal/handler/mahasiswa_handler.go`. Mendaftarkan rute CRUD pada `internal/router/router.go`.
+- **Langkah 12 & 13:** Menjalankan pengujian endpoint `GET`, `POST`, `PUT`, `DELETE` dan mengamati eksekusi kueri SQL GORM pada terminal.
+
+---
+
+### 3. Tugas Praktikum Mandiri Modul 7
+
+#### 1. CRUD Resource Matakuliah (Tugas 1)
+- **Model:** `internal/model/matakuliah.go` memuat struct `Matakuliah` (`ID`, `Kode` unique, `Nama`, `Sks`, `Semester`, `CreatedAt`, `UpdatedAt`).
+- **Repository:** `internal/repository/matakuliah_repository.go` menyediakan fungsi `AmbilMatakuliah` (berpaginasi dan filter cari/semester), `AmbilMatakuliahPerId`, `SimpanMatakuliah`, `PerbaruiMatakuliah`, dan `HapusMatakuliah`.
+- **DTO & Handler:** `PermintaanMatakuliah` pada `dto.go` dan fungsi handler lengkap pada `internal/handler/matakuliah_handler.go`.
+- **Endpoint Rute:** `/api/matakuliah` (`GET`, `POST`, `GET /:id`, `PUT /:id`, `DELETE /:id`).
+
+#### 2. Endpoint Program Studi Beserta Jumlah Mahasiswa (Tugas 2)
+- **Endpoint & Metode:** `GET /api/program-studi`
+- **Handler:** `DaftarProgramStudi` pada `internal/handler/program_studi_handler.go`.
+- **Logika:** Mengambil seluruh koleksi `ProgramStudi`, kemudian melakukan kueri hitung `Count(&jml)` pada model `Mahasiswa` berdasarkan `program_studi_id` (otomatis mengabaikan record yang berstatus soft-delete).
+
+#### 3. Soft Delete & Endpoint Pemulihan Data (Tugas 3)
+- **Penerapan Model:** Menambahkan field `DeletedAt gorm.DeletedAt` pada struct `Mahasiswa`.
+- **Fungsi Pemulihan:** Fungsi `Pulihkan` pada `mahasiswa_repository.go` menggunakan kueri `.Unscoped().Model(&mhs).Update("deleted_at", nil)` untuk mengembalikan data yang terhapus lunak.
+- **Endpoint Rute:** `POST /api/mahasiswa/:id/pulihkan`.
+
+#### 4. Perbandingan Jumlah Baris Kode CRUD Laravel vs Fiber (Tugas 4)
+
+| Komponen / Aspek Lapisan | Laravel 13 (PHP)<br>*(Berdasarkan Modul 4)* | Fiber v3 + GORM (Go)<br>*(Berdasarkan Modul 7)* |
+|---|---|---|
+| **1. Definisi Model & Skema** | **± 30 baris**<br>Model Eloquent terpisah dari berkas migrasi database terpisah. | **± 30 baris**<br>Struct Go merangkap sekaligus sebagai skema basis data via tag GORM. |
+| **2. Lapisan Akses Data (Repository)** | **0 baris**<br>(Opsional / jarang dibuat karena Model Eloquent sudah menerapkan pola Active Record penuh). | **± 75 baris**<br>Repository terpisah secara eksplisit mengelola kueri `Preload`, `Where`, `Count`, `Offset`, dan `Limit`. |
+| **3. DTO & Validasi Input** | **± 40 baris**<br>Terbagi ke Form Request `Store` & `Update` otomatis via deklarasi array validasi. | **± 50 baris**<br>Struct DTO eksplisit dengan pointer boolean (`*bool`), binding manual, serta pemetaan nilai input. |
+| **4. Controller / Handler** | **± 60 baris**<br>Method CRUD sangat ringkas, langsung memanggil Model / API Resource bawaan. | **± 120 baris**<br>Handler panjang karena wajib menangani konversi tipe (`strconv.Atoi`), casting `uint`, dan pengecekan galat. |
+| **5. Registrasi Rute (Routing)** | **1 baris**<br>`Route::apiResource('mahasiswa', ...)` | **6 baris**<br>Didaftarkan manual per metode HTTP (`Get`, `Post`, `Put`, `Delete`). |
+| **ESTIMASI TOTAL BARIS KODE** | **± 130 – 150 baris** | **± 275 – 300 baris** |
+
+---
+
+### 4. Tabel Dokumentasi Seluruh Endpoint API (Modul 7)
+
+| No | Metode | Endpoint URI | Parameter / Body | Status HTTP | Keterangan / Fungsi |
+|---|---|---|---|---|---|
+| 1 | `GET` | `/api/status` | - | `200 OK` | Pengecekan status server aktif. |
+| 2 | `GET` | `/api/program-studi` | - | `200 OK` | **Tugas 2:** Daftar Program Studi beserta `jumlah_mahasiswa`. |
+| 3 | `GET` | `/api/mahasiswa` | Query: `?halaman=1&per_halaman=10&cari=&angkatan=` | `200 OK` | Mengambil daftar mahasiswa berpaginasi & preload prodi. |
+| 4 | `POST` | `/api/mahasiswa` | Body JSON: `program_studi_id`, `nim`, `nama`, `email`, `angkatan`, `ipk` | `201 Created` | Membuat data mahasiswa baru. |
+| 5 | `GET` | `/api/mahasiswa/:id` | Param: `:id` | `200 OK` / `404` | Mengambil detail satu mahasiswa. |
+| 6 | `PUT` | `/api/mahasiswa/:id` | Param: `:id` & Body JSON yang diubah | `200 OK` | Memperbarui data mahasiswa. |
+| 7 | `DELETE` | `/api/mahasiswa/:id` | Param: `:id` | `200 OK` | Menghapus data mahasiswa (*Soft Delete*). |
+| 8 | `POST` | `/api/mahasiswa/:id/pulihkan` | Param: `:id` | `200 OK` | **Tugas 3:** Memulihkan data mahasiswa yang terhapus lunak. |
+| 9 | `GET` | `/api/matakuliah` | Query: `?halaman=1&per_halaman=10&cari=&semester=` | `200 OK` | **Tugas 1:** Mengambil daftar mata kuliah berpaginasi. |
+| 10 | `POST` | `/api/matakuliah` | Body JSON: `kode`, `nama`, `sks`, `semester` | `201 Created` | **Tugas 1:** Menambahkan mata kuliah baru. |
+| 11 | `GET` | `/api/matakuliah/:id`| Param: `:id` | `200 OK` / `404` | **Tugas 1:** Mengambil detail satu mata kuliah. |
+| 12 | `PUT` | `/api/matakuliah/:id`| Param: `:id` & Body JSON yang diubah | `200 OK` | **Tugas 1:** Memperbarui data mata kuliah. |
+| 13 | `DELETE`| `/api/matakuliah/:id`| Param: `:id` | `200 OK` | **Tugas 1:** Menghapus mata kuliah. |
+
+---
+
+### 5. Jawaban Pertanyaan Pembahasan Modul 7
+
+#### 1. Mengapa field `Aktif` pada DTO menggunakan pointer (`*bool`) sedangkan field lain tidak?
+- **Jawaban:**
+  - Tipe data primitif `bool` di Go memiliki nilai *zero-value* berupa `false`.
+  - Jika menggunakan `bool` biasa, sistem tidak dapat membedakan antara klien yang **sengaja mengirimkan nilai `false`** dengan klien yang **tidak menyertakan field tersebut** pada payload JSON (karena JSON parser otomatis mengisi `false` saat field kosong).
+  - Dengan menggunakan pointer `*bool`, *zero-value*-nya bernilai `nil`. Jika bernilai `nil`, berarti klien tidak mengirimkan field tersebut (sehingga data lama tidak akan tertimpa saat operasi update). Jika tidak `nil`, berarti klien secara eksplisit mengirimkan boolean `true` atau `false`.
+
+#### 2. Jelaskan perbedaan `Save`, `Update`, dan `Updates` pada GORM.
+- **Jawaban:**
+  - **`Save`:** Operasi serbaguna (*upsert*). Jika rekaman sudah memiliki nilai *primary key*, `Save` akan memperbarui **seluruh kolom** pada baris tersebut. Jika belum ada primary key, `Save` akan mengeksekusi `INSERT`. `Save` akan menyimpan seluruh nilai field termasuk yang bernilai *zero-value* (`false`, `0`, `""`).
+  - **`Update`:** Memperbarui **satu kolom spesifik** saja pada rekaman yang cocok dengan kueri (contoh: `db.Model(&mhs).Update("nama", "Budi")`).
+  - **`Updates`:** Memperbarui **banyak kolom sekaligus**. Jika argumen berupa struct, GORM hanya memperbarui kolom yang *bukan zero-value*. Namun jika menggunakan `map[string]interface{}`, seluruh kolom di dalam map akan diperbarui termasuk yang bernilai *zero-value*.
+
+#### 3. Apa risiko penggunaan `AutoMigrate` pada lingkungan produksi?
+- **Jawaban:**
+  - `AutoMigrate` pada GORM bersifat aman secara defensif: hanya membuat tabel baru, menambah kolom baru, atau membuat indeks, namun **tidak pernah menghapus atau mengubah kolom yang sudah ada**.
+  - Risikonya di lingkungan produksi:
+    1. Tidak ada rekaman riwayat versi migrasi (*migration history/tracking*).
+    2. Tidak mendukung fitur *rollback* otomatis jika eksekusi gagal di tengah jalan.
+    3. Berpotensi menyebabkan *table lock* yang mengganggu lalu lintas transaksi pengguna aktif pada tabel berukuran besar.
+    4. Perubahan nama kolom atau tipe data tidak dapat ditangani otomatis. Di lingkungan produksi dianjurkan memakai alat migrasi terpisah seperti `golang-migrate`.
+
+#### 4. Bandingkan mekanisme eager loading pada GORM dengan `with()` pada Eloquent.
+- **Jawaban:**
+  - **Persamaan:** Keduanya bertujuan mengatasi masalah kueri berlebih (*N+1 Query Problem*) dengan mengeksekusi kueri terpisah secara efisien memanfaatkan klausa `WHERE IN` berdasarkan *foreign key*.
+  - **Perbedaan:**
+    - Pada **Eloquent Laravel**, relasi didefinisikan sebagai method kelas PHP (`belongsTo`, `hasMany`) dan dimuat secara dinamis saat runtime melalui `Mahasiswa::with('programStudi')`.
+    - Pada **GORM Go**, relasi didefinisikan secara statis melalui struct tag (misal `gorm:"foreignKey:ProgramStudiID"`). Pemanggilan `db.Preload("ProgramStudi")` memanfaatkan pengetikan statis untuk memetakan objek hasil kueri ke dalam struct pointer terkait secara otomatis dan aman saat kompilasi.

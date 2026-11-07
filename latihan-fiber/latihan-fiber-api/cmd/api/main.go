@@ -33,6 +33,11 @@ func penanganGalat(c fiber.Ctx, err error) error {
 func main() {
    konf := config.Muat()
 
+   // Inisialisasi Database, AutoMigrate, dan Seeder Data Awal
+   config.HubungkanBasisData(konf)
+   config.Migrasi()
+   config.DataAwal()
+
    app := fiber.New(fiber.Config{
       AppName:      konf.NamaAplikasi,
       ErrorHandler: penanganGalat,
